@@ -55,11 +55,12 @@ def writeOut(responsesFilePath, template, folder):
             document.close()
 
 base = Tk()
+base.title("CSV 2 Paper")
 # Create a canvas
 base.columnconfigure(1,weight=1)    #confiugures column 0 to stretch with a scaler of 1.
-#base.rowconfigure(1,weight=1)       #confiugures row 0 to stretch with a scaler of 1.
+base.rowconfigure(4,weight=1)       #confiugures row 0 to stretch with a scaler of 1.
 base.columnconfigure(2,weight=1)    #confiugures column 0 to stretch with a scaler of 1.
-#base.rowconfigure(2,weight=1)       #confiugures row 0 to stretch with a scaler of 1.
+base.rowconfigure(4,weight=1)       #confiugures row 0 to stretch with a scaler of 1.
 base.geometry('450x500')
 files = filePaths("/", "/", "/")
 
@@ -106,7 +107,7 @@ template_entry.insert(0, 'Template')
 csv_entry = Entry()
 csv_entry.insert(0, 'CSV')
 folder_entry = Entry()
-folder_entry.insert(0, 'Folder')
+folder_entry.insert(0, 'Output Folder')
 
 template_file_selector = Button(base, text ='+', command = lambda:template_file_opener())
 csv_file_selector = Button(base, text ='+', command = lambda:csv_file_opener())
@@ -130,7 +131,13 @@ run.grid(row=5,column=1, columnspan=2,padx=5,pady=5)
 
 left = Frame(base)
 left.grid(row=4,column=1, padx=5,pady=5, sticky='nsew')
+left.columnconfigure(0,weight=1)
+left.rowconfigure(0,weight=1)
+
 right = Frame(base)
+right.columnconfigure(0,weight=1)
+right.rowconfigure(0,weight=1)
+
 right.grid(row=4,column=2, padx=5,pady=5, sticky='nsew')
 fieldsbox = Listbox(left, height=20, width=30)
 fieldsbox.grid(row=0,column=0, sticky='nsew')
