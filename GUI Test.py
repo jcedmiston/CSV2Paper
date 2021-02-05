@@ -66,15 +66,18 @@ files = filePaths("/", "/", "/")
 
 # Function for opening the file
 def template_file_opener():
-   template_file = filedialog.askopenfilename()
-   files.template = abspath(template_file)
-   #template_entry.configure(textvariable=basename(template_file))
-   template_entry.delete(0,END)
-   template_entry.insert(0,template_file)
-   with MailMerge(files.template) as document:
+    template_file = filedialog.askopenfilename()
+    files.template = abspath(template_file)
+    template_entry.delete(0,END)
+    template_entry.insert(0,template_file)
+    with MailMerge(files.template) as document:
         fields = document.get_merge_fields()
         for field in fields:
             fieldsbox.insert(END, field)
+
+    csv_entry.configure(state='normal')
+    csv_entry.insert(0, 'CSV')
+    csv_file_selector.configure(state='normal')
 
 def csv_file_opener():
     csv_file = filedialog.askopenfilename()
@@ -87,6 +90,11 @@ def csv_file_opener():
         headersbox.delete(0,END)
         for header in headers:
             headersbox.insert(END, header)
+
+    folder_entry.configure(state='normal')
+    folder_entry.insert(0, 'Output Folder')
+    folder_selector.configure(state='normal')
+            
 
 def directory_selector():
     folder_selected = filedialog.askdirectory()
@@ -104,14 +112,13 @@ def field_labels(file):
 
 template_entry = Entry()
 template_entry.insert(0, 'Template')
-csv_entry = Entry()
-csv_entry.insert(0, 'CSV')
-folder_entry = Entry()
-folder_entry.insert(0, 'Output Folder')
+
+csv_entry = Entry(state='disabled')
+folder_entry = Entry(state='disabled')
 
 template_file_selector = Button(base, text ='+', command = lambda:template_file_opener())
-csv_file_selector = Button(base, text ='+', command = lambda:csv_file_opener())
-folder_selector = Button(base, text ='+', command = lambda:directory_selector())
+csv_file_selector = Button(base, text ='+', state='disabled', command = lambda:csv_file_opener())
+folder_selector = Button(base, text ='+', state='disabled', command = lambda:directory_selector())
 run = Button(base, text ='Run', command = lambda:writeOut(responsesFilePath=files.responsesFilePath,
                                                             template=files.template,
                                                             folder=files.folder))
@@ -141,6 +148,7 @@ right.rowconfigure(0,weight=1)
 right.grid(row=4,column=2, padx=5,pady=5, sticky='nsew')
 fieldsbox = Listbox(left, height=20, width=30)
 fieldsbox.grid(row=0,column=0, sticky='nsew')
+
 
 scroll_fields_y = Scrollbar(left, orient=VERTICAL)
 scroll_fields_x = Scrollbar(left, orient=HORIZONTAL)
