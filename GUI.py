@@ -230,8 +230,6 @@ class App:
 
 files = FilePaths("/", "/", "/")
 
-# Function for opening the file
-
 if __name__ == '__main__':
     base = Tk()
     app = App(base)
