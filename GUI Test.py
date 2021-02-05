@@ -54,8 +54,17 @@ def writeOut(responsesFilePath, template, folder):
             document.write(filepath)
             document.close()
 
+def aboutPopup():
+    aboutWin = Toplevel()
+    aboutWin.wm_title("About CSV 2 Paper")
+    labelBonus = Label(aboutWin, text="Input")
+    labelBonus.grid(row=0, column=0)
+    B1 = Button(aboutWin, text="Okay", command=aboutWin.destroy)
+    B1.grid(row=1, column=0)
+
 base = Tk()
 base.title("CSV 2 Paper")
+menubar = Menu(base)
 # Create a canvas
 base.columnconfigure(1,weight=1)    #confiugures column 0 to stretch with a scaler of 1.
 base.rowconfigure(4,weight=1)       #confiugures row 0 to stretch with a scaler of 1.
@@ -98,7 +107,6 @@ def csv_file_opener():
 
 def directory_selector():
     folder_selected = filedialog.askdirectory()
-    # Change label contents
     files.folder = abspath(folder_selected)
     folder_entry.delete(0,END)
     folder_entry.insert(0,folder_selected)
@@ -109,6 +117,45 @@ def field_labels(file):
         fieldsbox.delete(0,END)
         for field in fields:
             fieldsbox.insert(END, field)
+
+def moveup():
+    try:
+        idxs = headersbox.curselection()
+        if not idxs:
+            return
+        for pos in idxs:
+            if pos==0:
+                continue
+            text=headersbox.get(pos)
+            headersbox.delete(pos)
+            headersbox.insert(pos-1, text)
+            headersbox.selection_set(pos-1)
+    except:
+        pass
+
+def movedown():
+    try:
+        idxs = headersbox.curselection()
+        if not idxs:
+            return
+        for pos in idxs:
+            # Are we at the bottom of the list?
+            if pos == headersbox.size()-1: 
+                continue
+            text=headersbox.get(pos)
+            headersbox.delete(pos)
+            headersbox.insert(pos+1, text)
+            headersbox.selection_set(pos + 1)
+    except:
+        pass
+
+helpmenu = Menu(menubar, tearoff=0)
+helpmenu.add_command(label="About...", command=aboutPopup())
+menubar.add_cascade(label="Help", menu=helpmenu)
+base.config(menu=menubar)
+
+upArrow = PhotoImage(file = "./up-arrow.png").subsample(12, 12)
+downArrow = PhotoImage(file = "./down-arrow.png").subsample(12, 12)
 
 template_entry = Entry()
 template_entry.insert(0, 'Template')
@@ -164,13 +211,20 @@ scroll_fields_y.grid(row=0,column=1, sticky='nsew')
 scroll_fields_x.grid(row=1,column=0, sticky='nsew')
 
 headersbox = Listbox(right, height=20, width=30)
-scroll_headers_y = Scrollbar(right, orient=VERTICAL)
-scroll_headers_x = Scrollbar(right, orient=HORIZONTAL)
+scroll_headers_y = Scrollbar(right, orient=VERTICAL, width=10)
+scroll_headers_x = Scrollbar(right, orient=HORIZONTAL, width=10)
 headersbox.grid(row=0,column=0, sticky='nsew')
+
+buttons = Frame(right)
+buttons.grid(row=0,column=2, rowspan=2, padx=5,pady=5, sticky='nsew')
+
+moveUpButton = Button(buttons, image=upArrow, command=lambda: moveup())
+moveDownButton = Button(buttons, image=downArrow, command=lambda: movedown())
 
 scroll_headers_x.grid(row=1,column=0, sticky='nsew')
 scroll_headers_y.grid(row=0,column=1, sticky='nsew')
-
+moveUpButton.grid(row=0,column=0, sticky='ew')
+moveDownButton.grid(row=1,column=0, sticky='nsew')
 headersbox.config(yscrollcommand=scroll_headers_y.set)
 headersbox.config(xscrollcommand=scroll_headers_x.set)
 
