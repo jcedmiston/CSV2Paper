@@ -1,11 +1,9 @@
+import csv
 from tkinter import *
 from tkinter import filedialog
-import csv
-from os import error as osError
-from os import rename
-from os.path import join, dirname, basename, isdir, isfile, abspath
-from datetime import datetime
+from os.path import abspath
 from mailmerge import MailMerge
+from WriteOut import write_out
 
 class FilePaths:
     def __init__(self, responsesFilePath, template, folder):
@@ -13,46 +11,13 @@ class FilePaths:
         self.template = template
         self.folder = folder
 
-def writeOut(responsesFilePath, template, folder):
-    with open(responsesFilePath, encoding='utf8', newline='') as auditionsFile:
-        auditions = csv.reader(auditionsFile)
-
-        next(auditions)
-        for audition in auditions:
-            document = MailMerge(template)
-            document.merge(
-                auditon_number=audition[1],
-                childs_name=audition[7],
-                date_of_birth=datetime.strptime(audition[8][:15], "%a %b %d %Y").strftime("%m/%d/%Y"),
-                age=audition[9],
-                ballet_school=audition[10],
-                training_years=audition[11],
-                hrs_per_week=audition[12],
-                training_level=audition[13],
-                other_training=audition[14],
-                danced_before=audition[16],
-                previous_role_1=audition[17],
-                previous_role_2=audition[18],
-                previous_role_3=audition[19],
-                other_leads=audition[15],
-                height=audition[20],
-                weight=audition[21],
-                bust=audition[22],
-                waist=audition[23],
-                hips=audition[24],
-                girth=audition[25],
-                inseam=audition[26],
-                guardian_name=audition[2],
-                phone_number=audition[4],
-                parents_email=audition[3],
-                street_address=audition[6],
-                conflict_dates=audition[27])
-            
-            filename = str(audition[1]).strip()+"-"+str(audition[7]).strip()+".docx"
-            filepath = abspath(join(folder, filename))
-
-            document.write(filepath)
-            document.close()
+def map_fields(fields_list, headers_list):
+    headers = headers_list.get(0,END)
+    fields = fields_list.get(0,END)
+    map = {}
+    for index in range(len(fields)):
+        map[fields[index]] = headers[index]
+    write_out(map, files.responsesFilePath, files.template, files.folder)
 
 class App:
     def __init__(self, base):
@@ -139,7 +104,7 @@ class App:
         self.move_header_down_button.grid(row=1,column=0, sticky='ew')
 
 
-        self.run = Button(base, text ='Run', command = lambda:writeOut(files.responsesFilePath, files.template, folder=files.folder))
+        self.run = Button(base, text ='Run', command = lambda:map_fields(self.merge_fields_listbox, self.headers_listbox))
         self.run.grid(row=5,column=1, columnspan=2,padx=5,pady=5)
 
     def template_file_opener(self):
@@ -149,6 +114,7 @@ class App:
         self.template_entry.insert(0,template_file)
         with MailMerge(files.template) as document:
             fields = document.get_merge_fields()
+            fields = sorted(fields)
             for field in fields:
                 self.merge_fields_listbox.insert(END, field)
 
@@ -159,11 +125,12 @@ class App:
     def csv_file_opener(self):
         csv_file = filedialog.askopenfilename()
         files.responsesFilePath = abspath(csv_file)
-        self.csv_entry.delete(0,END)
-        self.csv_entry.insert(0,csv_file)
+        self.csv_entry.delete(0, END)
+        self.csv_entry.insert(0, csv_file)
         with open(csv_file, encoding='utf8', newline='') as auditionsFile:
             auditions = csv.reader(auditionsFile)
             headers = next(auditions)
+            headers = sorted(headers)
             self.headers_listbox.delete(0,END)
             for header in headers:
                 self.headers_listbox.insert(END, header)
@@ -178,13 +145,6 @@ class App:
         files.folder = abspath(folder_selected)
         self.folder_entry.delete(0,END)
         self.folder_entry.insert(0,folder_selected)
-
-    def field_labels(self, file):
-        with MailMerge(files.template) as document:
-            fields = document.get_merge_fields()
-            self.merge_fields_listbox.delete(0,END)
-            for field in fields:
-                self.merge_fields_listbox.insert(END, field)
 
     def move_up(self, list_box):
         try:
