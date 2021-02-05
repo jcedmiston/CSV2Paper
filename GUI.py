@@ -55,9 +55,9 @@ def writeOut(responsesFilePath, template, folder):
             document.close()
 
 class App:
-    
     def __init__(self, base):
-        self.base = base.title("CSV 2 Paper")
+        self.base = base
+        self.base.title("CSV 2 Paper")
         self.base.columnconfigure(1,weight=1)    #confiugures to stretch with a scaler of 1.
         self.base.rowconfigure(4,weight=1)
         self.base.columnconfigure(2,weight=1)
@@ -67,26 +67,26 @@ class App:
         self.menu_bar = Menu(base)
         
         self.help_menu = Menu(self.menu_bar, tearoff=0)
-        self.help_menu.add_command(label="About...", command=aboutPopup())
+        self.help_menu.add_command(label="About...", command=self.about_popup)
         self.menu_bar.add_cascade(label="Help", menu=self.help_menu)
         
         self.base.config(menu=self.menu_bar)
 
         self.template_entry = Entry()
         self.template_entry.insert(0, 'Template')
-        self.template_file_selector = Button(base, text ='+', command = lambda:template_file_opener())
+        self.template_file_selector = Button(base, text ='+', command = lambda:self.template_file_opener())
         self.template_entry.grid(row=1,column=1,columnspan=2,sticky='we',padx=(5, 30),pady=(0,0))
         self.template_file_selector.grid(row=1,column=1,columnspan=2,sticky=E,padx=(0, 5),pady=5)
 
 
         self.csv_entry = Entry(state='disabled')
-        self.csv_file_selector = Button(base, text ='+', state='disabled', command = lambda:csv_file_opener())
+        self.csv_file_selector = Button(base, text ='+', state='disabled', command = lambda:self.csv_file_opener())
         self.csv_entry.grid(row=2,column=1,columnspan=2,sticky='we',padx=(5, 30),pady=5)
         self.csv_file_selector.grid(row=2,column=1,columnspan=2,sticky=E,padx=(0, 5),pady=5)
 
 
         self.folder_entry = Entry(state='disabled')
-        self.folder_selector = Button(base, text ='+', state='disabled', command = lambda:directory_selector())
+        self.folder_selector = Button(base, text ='+', state='disabled', command = lambda:self.directory_selector())
         self.folder_entry.grid(row=3,column=1,columnspan=2,sticky='we',padx=(5, 30),pady=5)
         self.folder_selector.grid(row=3,column=1,columnspan=2,sticky=E,padx=(0, 5),pady=5)
 
@@ -131,109 +131,106 @@ class App:
         self.edit_header_buttons.grid(row=0,column=2, rowspan=2, padx=5,pady=5, sticky='nsew')
 
         self.up_arrow_icon = PhotoImage(file = "./up-arrow.png").subsample(12, 12)
-        self.move_header_up_button = Button(self.edit_header_buttons, image=self.up_arrow_icon, command=lambda: move_up(self.headers_listbox))
+        self.move_header_up_button = Button(self.edit_header_buttons, image=self.up_arrow_icon, command=lambda: self.move_up(self.headers_listbox))
         self.move_header_up_button.grid(row=0,column=0, sticky='ew')
 
         self.down_arrow_icon = PhotoImage(file = "./down-arrow.png").subsample(12, 12)
-        self.move_header_down_button = Button(self.edit_header_buttons, image=self.down_arrow_icon, command=lambda: move_down(self.headers_listbox))
+        self.move_header_down_button = Button(self.edit_header_buttons, image=self.down_arrow_icon, command=lambda: self.move_down(self.headers_listbox))
         self.move_header_down_button.grid(row=1,column=0, sticky='ew')
 
 
         self.run = Button(base, text ='Run', command = lambda:writeOut(files.responsesFilePath, files.template, folder=files.folder))
         self.run.grid(row=5,column=1, columnspan=2,padx=5,pady=5)
 
-        def template_file_opener(self):
-            template_file = filedialog.askopenfilename()
-            files.template = abspath(template_file)
-            self.template_entry.delete(0,END)
-            self.template_entry.insert(0,template_file)
-            with MailMerge(files.template) as document:
-                fields = document.get_merge_fields()
-                for field in fields:
-                    self.merge_fields_listbox.insert(END, field)
+    def template_file_opener(self):
+        template_file = filedialog.askopenfilename()
+        files.template = abspath(template_file)
+        self.template_entry.delete(0,END)
+        self.template_entry.insert(0,template_file)
+        with MailMerge(files.template) as document:
+            fields = document.get_merge_fields()
+            for field in fields:
+                self.merge_fields_listbox.insert(END, field)
 
-            self.csv_entry.configure(state='normal')
-            self.csv_entry.insert(0, 'CSV')
-            self.csv_file_selector.configure(state='normal')
+        self.csv_entry.configure(state='normal')
+        self.csv_entry.insert(0, 'CSV')
+        self.csv_file_selector.configure(state='normal')
 
-        def csv_file_opener(self):
-            csv_file = filedialog.askopenfilename()
-            files.responsesFilePath = abspath(csv_file)
-            self.csv_entry.delete(0,END)
-            self.csv_entry.insert(0,csv_file)
-            with open(csv_file, encoding='utf8', newline='') as auditionsFile:
-                auditions = csv.reader(auditionsFile)
-                headers = next(auditions)
-                self.headers_listbox.delete(0,END)
-                for header in headers:
-                    self.headers_listbox.insert(END, header)
+    def csv_file_opener(self):
+        csv_file = filedialog.askopenfilename()
+        files.responsesFilePath = abspath(csv_file)
+        self.csv_entry.delete(0,END)
+        self.csv_entry.insert(0,csv_file)
+        with open(csv_file, encoding='utf8', newline='') as auditionsFile:
+            auditions = csv.reader(auditionsFile)
+            headers = next(auditions)
+            self.headers_listbox.delete(0,END)
+            for header in headers:
+                self.headers_listbox.insert(END, header)
 
-            self.folder_entry.configure(state='normal')
-            self.folder_entry.insert(0, 'Output Folder')
-            self.folder_selector.configure(state='normal')
+        self.folder_entry.configure(state='normal')
+        self.folder_entry.insert(0, 'Output Folder')
+        self.folder_selector.configure(state='normal')
                     
 
-        def directory_selector(self):
-            folder_selected = filedialog.askdirectory()
-            files.folder = abspath(folder_selected)
-            self.folder_entry.delete(0,END)
-            self.folder_entry.insert(0,folder_selected)
+    def directory_selector(self):
+        folder_selected = filedialog.askdirectory()
+        files.folder = abspath(folder_selected)
+        self.folder_entry.delete(0,END)
+        self.folder_entry.insert(0,folder_selected)
 
-        def field_labels(self, file):
-            with MailMerge(files.template) as document:
-                fields = document.get_merge_fields()
-                self.merge_fields_listbox.delete(0,END)
-                for field in fields:
-                    self.merge_fields_listbox.insert(END, field)
+    def field_labels(self, file):
+        with MailMerge(files.template) as document:
+            fields = document.get_merge_fields()
+            self.merge_fields_listbox.delete(0,END)
+            for field in fields:
+                self.merge_fields_listbox.insert(END, field)
 
-        def move_up(self, list_box):
-            try:
-                idxs = list_box.curselection()
-                if not idxs:
-                    return
-                for pos in idxs:
-                    if pos==0:
-                        continue
-                    text=list_box.get(pos)
-                    list_box.delete(pos)
-                    list_box.insert(pos-1, text)
-                    list_box.selection_set(pos-1)
-            except:
-                pass
+    def move_up(self, list_box):
+        try:
+            idxs = list_box.curselection()
+            if not idxs:
+                return
+            for pos in idxs:
+                if pos==0:
+                    continue
+                text=list_box.get(pos)
+                list_box.delete(pos)
+                list_box.insert(pos-1, text)
+                list_box.selection_set(pos-1)
+        except:
+            pass
 
-        def move_down(self, list_box):
-            try:
-                idxs = list_box.curselection()
-                if not idxs:
-                    return
-                for pos in idxs:
-                    # Are we at the bottom of the list?
-                    if pos == list_box.size()-1: 
-                        continue
-                    text=list_box.get(pos)
-                    list_box.delete(pos)
-                    list_box.insert(pos+1, text)
-                    list_box.selection_set(pos + 1)
-            except:
-                pass
-
-def aboutPopup():
-    aboutWin = Toplevel()
-    aboutWin.wm_title("About CSV 2 Paper")
-    labelBonus = Label(aboutWin, text="Input")
-    labelBonus.grid(row=0, column=0)
-    B1 = Button(aboutWin, text="Okay", command=aboutWin.destroy)
-    B1.grid(row=1, column=0)
+    def move_down(self, list_box):
+        try:
+            idxs = list_box.curselection()
+            if not idxs:
+                return
+            for pos in idxs:
+                # Are we at the bottom of the list?
+                if pos == list_box.size()-1: 
+                    continue
+                text=list_box.get(pos)
+                list_box.delete(pos)
+                list_box.insert(pos+1, text)
+                list_box.selection_set(pos + 1)
+        except:
+            pass
+        
+    def about_popup(self):
+            about_win = Toplevel()
+            about_win.wm_title("About CSV 2 Paper")
+            about_win.resizable(0, 0)
+            about_win.geometry('560x225')
+            about_text = """Material Design Icon Pack made by\nGoogle (flaticon.com/authors/google")\nRetrieved from Flaticon (flaticon.com)\nLicense under Creative Commons 3.0 BY\n(creativecommons.org/licenses/by/3.0/)"""
+            about_label = Label(about_win, text=about_text, justify=CENTER, padx=10, pady=5)
+            about_label.grid(row=0, column=0, sticky="nsew")
+            close_button = Button(about_win, text="Close", command=about_win.destroy, justify=CENTER)
+            close_button.grid(row=1, column=0)
 
 files = FilePaths("/", "/", "/")
 
 # Function for opening the file
-
-
-
-
-
-
 
 if __name__ == '__main__':
     base = Tk()
