@@ -1,6 +1,7 @@
 import csv
 from os.path import join, abspath
 from mailmerge import MailMerge
+from docx2pdf import convert
 
 def write_out(map, responsesFilePath, template, folder):
     with open(responsesFilePath, encoding='utf8', newline='') as auditionsFile:
@@ -15,5 +16,6 @@ def write_out(map, responsesFilePath, template, folder):
             filename = str(audition["Child's Name"]).strip()+".docx"
             filepath = abspath(join(folder, filename))
 
-            document.write(filepath)
+            convert(document, filepath)
+            #document.write(filepath)
             document.close()

@@ -3,7 +3,7 @@ from tkinter import *
 from tkinter import filedialog
 from os.path import abspath
 from mailmerge import MailMerge
-from WriteOut import write_out
+from writeout import write_out
 
 class FilePaths:
     def __init__(self, responsesFilePath, template, folder):
