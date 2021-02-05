@@ -106,7 +106,7 @@ def directory_selector():
 def field_labels(file):
     with MailMerge(files.template) as document:
         fields = document.get_merge_fields()
-        fieldsboxs.delete(0,END)
+        fieldsbox.delete(0,END)
         for field in fields:
             fieldsbox.insert(END, field)
 
