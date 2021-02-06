@@ -28,7 +28,10 @@ def write_out(map, responsesFilePath, template, folder, filename, output_as_word
 			temp_docx.close()
 			document.write(temp_docx.name)
 			document.close()
-			convert(temp_docx.name, pdf_filepath)
+			try:
+				convert(temp_docx.name, pdf_filepath)
+			except NotImplementedError:
+				pass
 			unlink(temp_docx.name)
 		if not output_as_pdf:
 			document.write(docx_filepath)
@@ -36,4 +39,7 @@ def write_out(map, responsesFilePath, template, folder, filename, output_as_word
 		if output_as_word and output_as_pdf:
 			document.write(docx_filepath)
 			document.close()
-			convert(docx_filepath, pdf_filepath)
+			try:
+				convert(docx_filepath, pdf_filepath)
+			except NotImplementedError:
+				pass

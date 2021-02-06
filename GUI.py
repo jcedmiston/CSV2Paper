@@ -4,7 +4,7 @@ from tkinter import *
 from tkinter import filedialog
 from os.path import abspath
 from mailmerge import MailMerge
-from writeout import write_out
+from WriteOut import write_out
 
 class FilePaths:
 	def __init__(self, responsesFilePath, template, folder, filename):
@@ -71,10 +71,10 @@ class App:
 		self.filename_entry = Entry(self.file_output_info_group, state='disabled', textvariable=self.filename)
 
 		self.output_as_word = BooleanVar(value=True)
-		self.docx_checkbox = Checkbutton(self.file_output_info_group, text='Word', variable=self.output_as_word, onvalue=True, offvalue=False, command=self.check_runnable)
+		self.docx_checkbox = Checkbutton(self.file_output_info_group, state='disabled', text='Word', variable=self.output_as_word, onvalue=True, offvalue=False, command=self.check_runnable)
 		
 		self.output_as_pdf = BooleanVar(value=True)
-		self.pdf_checkbox = Checkbutton(self.file_output_info_group, text='PDF', variable=self.output_as_pdf, onvalue=True, offvalue=False, command=self.check_runnable)
+		self.pdf_checkbox = Checkbutton(self.file_output_info_group, state='disabled', text='PDF', variable=self.output_as_pdf, onvalue=True, offvalue=False, command=self.check_runnable)
 
 		self.filename_entry.grid(row=0,column=0,sticky='we',padx=(0, 30))
 		self.docx_checkbox.grid(row=0,column=1,sticky='we',padx=(5, 30))
@@ -133,7 +133,7 @@ class App:
 		self.run.grid(row=6,column=1, columnspan=2,padx=5,pady=5)
 
 	def template_file_opener(self):
-		template_file = filedialog.askopenfilename()
+		template_file = filedialog.askopenfilename(filetypes=[("Word Document", ".docx")])
 		files.template = abspath(template_file)
 		self.template_entry.delete(0,END)
 		self.template_entry.insert(0,template_file)
@@ -170,6 +170,9 @@ class App:
 		self.folder_entry.insert(0,folder_selected)
 
 		self.filename_entry.configure(state='normal')
+		self.run.configure(state='normal')
+		self.pdf_checkbox.configure(state='normal')
+		self.docx_checkbox.configure(state='normal')
 
 	def move_up(self, list_box):
 		try:
