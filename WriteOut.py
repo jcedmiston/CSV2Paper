@@ -44,17 +44,17 @@ def write_out(map, responsesFilePath, template, folder, filename, output_as_word
 				convert(docx_filepath, pdf_filepath)
 			except NotImplementedError:
 				pass
-		
+		#sleep(5)
 		if platform.system() == 'Darwin':       # macOS
 			if output_as_word:
-				subprocess.call(('open', docx_filename))
+				subprocess.call(('open', docx_filepath))
 			if output_as_pdf:
-				subprocess.call(('open', pdf_filename))
+				subprocess.call(('open', pdf_filepath))
 		elif platform.system() == 'Windows':    # Windows
 			if output_as_word:
-				os.startfile(docx_filename)
+				os.startfile(docx_filepath)
 			if output_as_pdf:
-				os.startfile(pdf_filename)
+				os.startfile(pdf_filepath)
 		else:                                   # linux variants
 			if output_as_word:
-				subprocess.call(('xdg-open', docx_filename))
+				subprocess.call(('xdg-open', docx_filepath))
