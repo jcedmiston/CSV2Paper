@@ -1,10 +1,14 @@
-import csv
-import re
+import csv, queue, subprocess, os, platform, asyncio, threading
+from os import unlink
+from os.path import relpath, join, abspath, normpath
 from tkinter import *
 from tkinter import filedialog
-from os.path import abspath
-from mailmerge import MailMerge
-from WriteOut import write_out
+from tkinter import ttk
+from mailmerge_tracking import MailMergeTracking
+#from WriteOut import write_out
+from tempfile import NamedTemporaryFile
+from time import sleep
+from docx2pdf import convert
 
 class FilePaths:
 	def __init__(self, responsesFilePath, template, folder, filename):
@@ -13,24 +17,15 @@ class FilePaths:
 		self.folder = folder
 		self.filename = filename
 
-def map_fields(fields_list, headers_list, filename, word, pdf):
-	headers = headers_list.get(0,END)
-	fields = fields_list.get(0,END)
-	map = {}
-	print(word)
-	print(pdf)
-	for index in range(len(fields)):
-		map[fields[index]] = headers[index]
-	write_out(map, files.responsesFilePath, files.template, files.folder, filename, word, pdf)
-
 class App:
 	def __init__(self, base):
+		self.files = FilePaths("/", "/", "/", "Output File")
+
 		self.base = base
 		self.base.title("CSV 2 Paper")
 		self.base.columnconfigure(1,weight=1)    #confiugures to stretch with a scaler of 1.
 		self.base.rowconfigure(5,weight=1)
-		self.base.columnconfigure(2,weight=1)     
-		self.base.geometry('450x500')
+		self.base.columnconfigure(2,weight=1)
 		
 		self.menu_bar = Menu(base)
 		
@@ -120,24 +115,24 @@ class App:
 		self.edit_header_buttons = Frame(self.right_side_headers_group)
 		self.edit_header_buttons.grid(row=0,column=2, rowspan=2, padx=5,pady=5, sticky='nsew')
 
-		self.up_arrow_icon = PhotoImage(file = "./up-arrow.png").subsample(30, 30)
+		self.up_arrow_icon = PhotoImage(file = relpath("up-arrow.png")).subsample(30, 30)
 		self.move_header_up_button = Button(self.edit_header_buttons, image=self.up_arrow_icon, command=lambda: self.move_up(self.headers_listbox))
 		self.move_header_up_button.grid(row=0,column=0, sticky='ew')
 
-		self.down_arrow_icon = PhotoImage(file = "./down-arrow.png").subsample(30, 30)
+		self.down_arrow_icon = PhotoImage(file = relpath("down-arrow.png")).subsample(30, 30)
 		self.move_header_down_button = Button(self.edit_header_buttons, image=self.down_arrow_icon, command=lambda: self.move_down(self.headers_listbox))
 		self.move_header_down_button.grid(row=1,column=0, sticky='ew')
 
-
-		self.run = Button(base, text ='Run', state='disabled', command = lambda:map_fields(self.merge_fields_listbox, self.headers_listbox, self.filename.get(), word=self.output_as_word.get(), pdf=self.output_as_pdf.get()))
+		self.run = Button(base, text ='Run', state='disabled', command = self.run_op)
+		#self.run = Button(base, text ='Run', state='disabled', command = lambda:map_fields(self.merge_fields_listbox, self.headers_listbox, self.filename.get(), word=self.output_as_word.get(), pdf=self.output_as_pdf.get()))
 		self.run.grid(row=6,column=1, columnspan=2,padx=5,pady=5)
 
 	def template_file_opener(self):
 		template_file = filedialog.askopenfilename(filetypes=[("Word Document", ".docx")])
-		files.template = abspath(template_file)
+		self.files.template = abspath(template_file)
 		self.template_entry.delete(0,END)
 		self.template_entry.insert(0,template_file)
-		with MailMerge(files.template) as document:
+		with MailMergeTracking(self.files.template) as document:
 			fields = document.get_merge_fields()
 			fields = sorted(fields)
 			for field in fields:
@@ -148,7 +143,7 @@ class App:
 
 	def csv_file_opener(self):
 		csv_file = filedialog.askopenfilename()
-		files.responsesFilePath = abspath(csv_file)
+		self.files.responsesFilePath = abspath(csv_file)
 		self.csv_entry.delete(0, END)
 		self.csv_entry.insert(0, csv_file)
 		with open(csv_file, encoding='utf8', newline='') as auditionsFile:
@@ -165,7 +160,7 @@ class App:
 
 	def directory_selector(self):
 		folder_selected = filedialog.askdirectory()
-		files.folder = abspath(folder_selected)
+		self.files.folder = abspath(folder_selected)
 		self.folder_entry.delete(0,END)
 		self.folder_entry.insert(0,folder_selected)
 
@@ -212,17 +207,143 @@ class App:
 			self.run.configure(state='normal')
 
 	def about_popup(self):
-			about_win = Toplevel()
-			about_win.wm_title("About CSV 2 Paper")
-			about_win.resizable(0, 0)
-			about_win.columnconfigure(0,weight=1)
-			about_text = """Material Design Icon Pack made by\nGoogle (flaticon.com/authors/google")\nRetrieved from Flaticon (flaticon.com)\nLicense under Creative Commons 3.0 BY\n(creativecommons.org/licenses/by/3.0/)"""
-			about_label = Label(about_win, text=about_text, justify=CENTER, padx=10, pady=5)
-			about_label.grid(row=0, column=0, sticky="nsew")
-			close_button = Button(about_win, text="Close", command=about_win.destroy, justify=CENTER)
-			close_button.grid(row=1, column=0, pady=5, padx=5)
+		about_win = Toplevel()
+		about_win.wm_title("About CSV 2 Paper")
+		about_win.resizable(0, 0)
+		about_win.columnconfigure(0,weight=1)
+		about_text = """Material Design Icon Pack made by\nGoogle (flaticon.com/authors/google")\nRetrieved from Flaticon (flaticon.com)\nLicense under Creative Commons 3.0 BY\n(creativecommons.org/licenses/by/3.0/)"""
+		about_label = Label(about_win, text=about_text, justify=CENTER, padx=10, pady=5)
+		about_label.grid(row=0, column=0, sticky="nsew")
+		close_button = Button(about_win, text="Close", command=about_win.destroy, justify=CENTER)
+		close_button.grid(row=1, column=0, pady=5, padx=5)
 
-files = FilePaths("/", "/", "/", "Output File")
+	def map_fields(self):
+		headers = self.headers_listbox.get(0,END)
+		fields = self.merge_fields_listbox.get(0,END)
+		map = {}
+		for index in range(len(fields)):
+			map[fields[index]] = headers[index]
+		return map
+
+	def run_op(self):
+		map = self.map_fields()
+		Run(self.base, map, self.files, self.output_as_word.get(), self.output_as_word.get())
+
+class Run:
+	def __init__(self, base, map, files_info, output_as_word, output_as_pdf):
+		self.map = map
+		self.files_info = files_info
+		self.output_as_word = output_as_word
+		self.output_as_pdf = output_as_pdf
+
+		self.run_popup = Toplevel()
+		x = base.winfo_rootx()
+		y = base.winfo_rooty()
+		y_offset = base.winfo_height() / 3
+		x_offset = base.winfo_width() / 3
+		geom = "+%d+%d" % (x+x_offset,y+y_offset)
+		self.run_popup.wm_geometry(geom)
+		self.run_popup.wm_title("Converting...")
+		self.run_popup.resizable(0, 0)
+		self.run_popup.columnconfigure(0,weight=1)
+
+		self.running_description = StringVar(value="Mapping data to fields...")
+		self.running_description_label = Label(self.run_popup, textvariable=self.running_description, justify=LEFT)
+		self.running_description_label.grid(row=1, column=0, pady=(5,0), padx=5, sticky=W)
+
+		self.progress = ttk.Progressbar(self.run_popup, orient="horizontal",length=250, mode="determinate")
+		with open(self.files_info.responsesFilePath, encoding='utf8', newline='') as CSV_file:
+			self.num_records = sum(1 for row in CSV_file) - 1
+		self.progress["maximum"] = self.num_records
+		
+		self.running_count = StringVar(value="0 of "+str(self.num_records))
+		self.running_count_label = Label(self.run_popup, textvariable=self.running_count, justify=LEFT)
+		self.running_count_label.grid(row=1, column=1, pady=(5,0), padx=5, sticky=E)
+		self.progress.grid(row=2, column=0, columnspan=2, pady=(0,5), padx=5, sticky='ew')
+		
+		self.queue = queue.Queue()
+		self.thread = threading.Thread(target=self.write_out)
+		self.thread.start()
+		self.run_popup.after(1, self.refresh_data)
+		
+	def refresh_data(self):
+		"""
+		"""
+		# do nothing if the aysyncio thread is dead
+		# and no more data in the queue
+		if not self.thread.is_alive() and self.queue.empty():
+			self.run_popup.destroy()
+			return
+
+        # refresh the GUI with new data from the queue
+		while not self.queue.empty():
+			progress, description = self.queue.get()
+			self.progress['value'] = progress
+			self.running_description.set(description)
+			self.running_count.set(str(progress)+" of "+str(self.num_records))
+			self.run_popup.update()
+		#  timer to refresh the gui with data from the asyncio thread
+		self.run_popup.after(1, self.refresh_data)
+
+	def write_out(self):
+		with open(self.files_info.responsesFilePath, encoding='utf8', newline='') as auditionsFile:
+			auditions = csv.DictReader(auditionsFile)
+			next(auditions)
+		
+			document = MailMergeTracking(self.files_info.template)
+			merge_data = []
+			progress = 0
+			for audition in auditions:
+				merge_data.append({field:audition[self.map[field]] for field in document.get_merge_fields()})
+				progress += 1
+				self.queue.put((progress, "Mapping data to fields..."))
+		self.queue.put((self.num_records, "Mapping data to fields..."))
+
+		self.queue.put((0, "Merging into template..."))
+		document.merge_templates(merge_data, separator="page_break", queue=self.queue)
+		self.queue.put((self.num_records, "Merging into template..."))
+
+		docx_filename = str(self.files_info.filename)+".docx"
+		pdf_filename = str(self.files_info.filename)+".pdf"
+
+		docx_filepath = normpath(abspath(join(self.files_info.folder, docx_filename)))
+		pdf_filepath = normpath(abspath(join(self.files_info.folder, pdf_filename)))
+
+		if not self.output_as_word:
+			temp_docx = NamedTemporaryFile(delete=False, suffix=".docx")
+			temp_docx.close()
+			document.write(temp_docx.name)
+			document.close()
+			try:
+				convert(temp_docx.name, pdf_filepath)
+			except NotImplementedError:
+				pass
+			unlink(temp_docx.name)
+		if not self.output_as_pdf:
+			document.write(docx_filepath)
+			document.close()
+		if self.output_as_word and self.output_as_pdf:
+			document.write(docx_filepath)
+			document.close()
+			try:
+				convert(docx_filepath, pdf_filepath)
+			except NotImplementedError:
+				pass
+		'''
+		if platform.system() == 'Darwin':       # macOS
+			if self.output_as_word:
+				subprocess.call(('open', docx_filepath))
+			if self.output_as_pdf:
+				subprocess.call(('open', pdf_filepath))
+		elif platform.system() == 'Windows':    # Windows
+			if self.output_as_word:
+				os.startfile(docx_filepath)
+			if self.output_as_pdf:
+				os.startfile(pdf_filepath)
+		else:                                   # linux variants
+			if self.output_as_word:
+				subprocess.call(('xdg-open', docx_filepath))
+		'''
 
 if __name__ == '__main__':
 	base = Tk()
