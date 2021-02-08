@@ -1,14 +1,20 @@
-import csv, queue, subprocess, os, platform, asyncio, threading
-from os import unlink
-from os.path import relpath, join, abspath, normpath
-from tkinter import *
-from tkinter import filedialog
-from tkinter import ttk
-from mailmerge_tracking import MailMergeTracking
-#from WriteOut import write_out
+import asyncio
+import csv
+import os
+import platform
+import queue
+import subprocess
+import threading
+from os import mkdir, unlink
+from os.path import abspath, join, normpath, relpath, isdir
 from tempfile import NamedTemporaryFile
-from time import sleep
+from tkinter import *
+from tkinter import filedialog, ttk
+
 from docx2pdf import convert
+
+from mailmerge_tracking import MailMergeTracking
+
 
 class FilePaths:
 	def __init__(self, responsesFilePath, template, folder, filename):
@@ -38,6 +44,7 @@ class App:
 
 		self.template = StringVar(value="Template")
 		self.template_entry = Entry(textvariable=self.template)
+		self.template_entry.configure(validate="focusout", validatecommand = lambda:self.template_file_text())
 		self.template_file_selector = Button(base, text ='+', command = lambda:self.template_file_opener())
 		self.template_entry.grid(row=1,column=1,columnspan=2,sticky='we',padx=(5, 30),pady=(0,0))
 		self.template_file_selector.grid(row=1,column=1,columnspan=2,sticky=E,padx=(0, 5),pady=5)
@@ -45,6 +52,7 @@ class App:
 
 		self.csv = StringVar(value="CSV")
 		self.csv_entry = Entry(state='disabled', textvariable=self.csv)
+		self.csv_entry.configure(validate="focusout", validatecommand = lambda:self.csv_file_text())
 		self.csv_file_selector = Button(base, text ='+', state='disabled', command = lambda:self.csv_file_opener())
 		self.csv_entry.grid(row=2,column=1,columnspan=2,sticky='we',padx=(5, 30),pady=5)
 		self.csv_file_selector.grid(row=2,column=1,columnspan=2,sticky=E,padx=(0, 5),pady=5)
@@ -52,6 +60,7 @@ class App:
 
 		self.folder = StringVar(value="Output Folder")
 		self.folder_entry = Entry(state='disabled', textvariable=self.folder)
+		self.folder_entry.configure(validate="focusout", validatecommand = lambda:self.directory_selctor_text())
 		self.folder_selector = Button(base, text ='+', state='disabled', command = lambda:self.directory_selector())
 		self.folder_entry.grid(row=3,column=1,columnspan=2,sticky='we',padx=(5, 30),pady=5)
 		self.folder_selector.grid(row=3,column=1,columnspan=2,sticky=E,padx=(0, 5),pady=5)
@@ -124,7 +133,6 @@ class App:
 		self.move_header_down_button.grid(row=1,column=0, sticky='ew')
 
 		self.run = Button(base, text ='Run', state='disabled', command = self.run_op)
-		#self.run = Button(base, text ='Run', state='disabled', command = lambda:map_fields(self.merge_fields_listbox, self.headers_listbox, self.filename.get(), word=self.output_as_word.get(), pdf=self.output_as_pdf.get()))
 		self.run.grid(row=6,column=1, columnspan=2,padx=5,pady=5)
 
 	def template_file_opener(self):
@@ -135,11 +143,22 @@ class App:
 		with MailMergeTracking(self.files.template) as document:
 			fields = document.get_merge_fields()
 			fields = sorted(fields)
+			self.merge_fields_listbox.delete(0,END)
 			for field in fields:
 				self.merge_fields_listbox.insert(END, field)
 
 		self.csv_entry.configure(state='normal')
 		self.csv_file_selector.configure(state='normal')
+
+	def template_file_text(self):
+		self.files.template = abspath(self.template_entry.get())
+		print(self.files.template)
+		with MailMergeTracking(self.files.template) as document:
+			fields = document.get_merge_fields()
+			fields = sorted(fields)
+			self.merge_fields_listbox.delete(0,END)
+			for field in fields:
+				self.merge_fields_listbox.insert(END, field)
 
 	def csv_file_opener(self):
 		csv_file = filedialog.askopenfilename()
@@ -156,7 +175,16 @@ class App:
 
 		self.folder_entry.configure(state='normal')
 		self.folder_selector.configure(state='normal')
-					
+	
+	def csv_file_text(self):
+		self.files.responsesFilePath = abspath(self.csv_entry.get())
+		with open(self.files.responsesFilePath, encoding='utf8', newline='') as auditionsFile:
+			auditions = csv.reader(auditionsFile)
+			headers = next(auditions)
+			headers = sorted(headers)
+			self.headers_listbox.delete(0,END)
+			for header in headers:
+				self.headers_listbox.insert(END, header)
 
 	def directory_selector(self):
 		folder_selected = filedialog.askdirectory()
@@ -168,6 +196,9 @@ class App:
 		self.run.configure(state='normal')
 		self.pdf_checkbox.configure(state='normal')
 		self.docx_checkbox.configure(state='normal')
+
+	def directory_selctor_text(self):
+		self.files.folder = abspath(self.folder_entry.get())
 
 	def move_up(self, list_box):
 		try:
@@ -208,6 +239,7 @@ class App:
 
 	def about_popup(self):
 		about_win = Toplevel()
+		about_win.grab_set()
 		about_win.wm_title("About CSV 2 Paper")
 		about_win.resizable(0, 0)
 		about_win.columnconfigure(0,weight=1)
@@ -227,6 +259,7 @@ class App:
 
 	def run_op(self):
 		map = self.map_fields()
+		self.files.folder = self.folder_entry.get()
 		Run(self.base, map, self.files, self.output_as_word.get(), self.output_as_word.get())
 
 class Run:
@@ -237,6 +270,7 @@ class Run:
 		self.output_as_pdf = output_as_pdf
 
 		self.run_popup = Toplevel()
+		self.run_popup.grab_set()
 		x = base.winfo_rootx()
 		y = base.winfo_rooty()
 		y_offset = base.winfo_height() / 3
@@ -306,6 +340,9 @@ class Run:
 		docx_filename = str(self.files_info.filename)+".docx"
 		pdf_filename = str(self.files_info.filename)+".pdf"
 
+		if not isdir(self.files_info.folder):
+			mkdir(self.files_info.folder)
+
 		docx_filepath = normpath(abspath(join(self.files_info.folder, docx_filename)))
 		pdf_filepath = normpath(abspath(join(self.files_info.folder, pdf_filename)))
 
@@ -329,7 +366,7 @@ class Run:
 				convert(docx_filepath, pdf_filepath)
 			except NotImplementedError:
 				pass
-		'''
+		
 		if platform.system() == 'Darwin':       # macOS
 			if self.output_as_word:
 				subprocess.call(('open', docx_filepath))
@@ -343,9 +380,9 @@ class Run:
 		else:                                   # linux variants
 			if self.output_as_word:
 				subprocess.call(('xdg-open', docx_filepath))
-		'''
 
 if __name__ == '__main__':
 	base = Tk()
 	app = App(base)
 	base.mainloop()
+	input()
