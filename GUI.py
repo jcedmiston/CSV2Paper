@@ -385,4 +385,3 @@ if __name__ == '__main__':
 	base = Tk()
 	app = App(base)
 	base.mainloop()
-	input()
