@@ -106,4 +106,4 @@ class MailMergeTracking(MailMerge):
                     self.merge(parts, **repl)
                 
                 completed_count += 1
-                queue.put((completed_count, "Merging into template..."))
+                queue.put((completed_count, "Merging into template...", "determinate"))

@@ -6,7 +6,7 @@ import queue
 import subprocess
 import threading
 from os import mkdir, unlink
-from os.path import abspath, join, normpath, relpath, isdir
+from os.path import abspath, join, normpath, relpath, isdir, dirname, realpath
 from tempfile import NamedTemporaryFile
 from tkinter import *
 from tkinter import filedialog, ttk
@@ -14,7 +14,7 @@ from tkinter import filedialog, ttk
 from docx2pdf import convert
 
 from mailmerge_tracking import MailMergeTracking
-
+__location__ = realpath(join(os.getcwd(), dirname(__file__)))
 
 class FilePaths:
 	def __init__(self, responsesFilePath, template, folder, filename):
@@ -88,48 +88,55 @@ class App:
 		self.left_merge_fields_group = Frame(base)
 		self.left_merge_fields_group.grid(row=5,column=1, padx=5,pady=5, sticky='nsew')
 		self.left_merge_fields_group.columnconfigure(0,weight=1)
-		self.left_merge_fields_group.rowconfigure(0,weight=1)
+		self.left_merge_fields_group.rowconfigure(1,weight=1)
+
+		self.merge_field_label = Label(self.left_merge_fields_group, text="Template Fields", justify=CENTER, padx=10, pady=5)
+		self.merge_field_label.grid(row=0,column=0, sticky='nsew')
 
 		self.scroll_merge_fields_y = Scrollbar(self.left_merge_fields_group, orient=VERTICAL)
 		self.scroll_merge_fields_x = Scrollbar(self.left_merge_fields_group, orient=HORIZONTAL)
 
-		self.merge_fields_listbox = Listbox(self.left_merge_fields_group, height=20, width=30, yscrollcommand=self.scroll_merge_fields_y.set, xscrollcommand=self.scroll_merge_fields_x.set)
-		self.merge_fields_listbox.grid(row=0,column=0, sticky='nsew')
+		self.merge_fields_listbox = Listbox(self.left_merge_fields_group, height=20, width=30, yscrollcommand=self.scroll_merge_fields_y.set, xscrollcommand=self.scroll_merge_fields_x.set, exportselection=0)
+		self.merge_fields_listbox.bind("<<ListboxSelect>>", self.on_select)
+		self.merge_fields_listbox.grid(row=1,column=0, sticky='nsew')
 
 		self.scroll_merge_fields_y.config(command = self.merge_fields_listbox.yview)
-		self.scroll_merge_fields_y.grid(row=0,column=1, sticky='nsew')
+		self.scroll_merge_fields_y.grid(row=1,column=1, sticky='nsew')
 
 		self.scroll_merge_fields_x.config(command = self.merge_fields_listbox.xview)
-		self.scroll_merge_fields_x.grid(row=1,column=0, sticky='nsew')
+		self.scroll_merge_fields_x.grid(row=2,column=0, sticky='nsew')
 
 
-		self.right_side_headers_group = Frame(base)
-		self.right_side_headers_group.grid(row=5,column=2, padx=5,pady=5, sticky='nsew')
-		self.right_side_headers_group.columnconfigure(0,weight=1)
-		self.right_side_headers_group.rowconfigure(0,weight=1)
+		self.right_headers_group = Frame(base)
+		self.right_headers_group.grid(row=5,column=2, padx=5,pady=5, sticky='nsew')
+		self.right_headers_group.columnconfigure(0,weight=1)
+		self.right_headers_group.rowconfigure(1,weight=1)
 
-		self.scroll_headers_y = Scrollbar(self.right_side_headers_group, orient=VERTICAL, width=10)
-		self.scroll_headers_x = Scrollbar(self.right_side_headers_group, orient=HORIZONTAL, width=10)
+		self.headers_label = Label(self.right_headers_group, text="Data Headers", justify=CENTER, padx=10, pady=5)
+		self.headers_label.grid(row=0,column=0, sticky='nsew')
 
+		self.scroll_headers_y = Scrollbar(self.right_headers_group, orient=VERTICAL)
+		self.scroll_headers_x = Scrollbar(self.right_headers_group, orient=HORIZONTAL)
 
-		self.headers_listbox = Listbox(self.right_side_headers_group, height=20, width=30, yscrollcommand=self.scroll_headers_y.set, xscrollcommand=self.scroll_headers_x.set)
-		self.headers_listbox.grid(row=0,column=0, sticky='nsew')
+		self.headers_listbox = Listbox(self.right_headers_group, height=20, width=30, yscrollcommand=self.scroll_headers_y.set, xscrollcommand=self.scroll_headers_x.set, exportselection=0, )
+		self.headers_listbox.bind("<<ListboxSelect>>", self.on_select)
+		self.headers_listbox.grid(row=1,column=0, sticky='nsew')
 
 		self.scroll_headers_y.config(command = self.headers_listbox.yview)
-		self.scroll_headers_y.grid(row=0,column=1, sticky='nsew')
+		self.scroll_headers_y.grid(row=1,column=1, sticky='nsew')
 
 		self.scroll_headers_x.config(command = self.headers_listbox.xview)
-		self.scroll_headers_x.grid(row=1,column=0, sticky='nsew')
+		self.scroll_headers_x.grid(row=2,column=0, sticky='nsew')
 
-		self.edit_header_buttons = Frame(self.right_side_headers_group)
-		self.edit_header_buttons.grid(row=0,column=2, rowspan=2, padx=5,pady=5, sticky='nsew')
+		self.edit_header_buttons = Frame(self.right_headers_group)
+		self.edit_header_buttons.grid(row=1,column=2, rowspan=2, padx=5,pady=5, sticky='nsew')
 
-		self.up_arrow_icon = PhotoImage(file = relpath("up-arrow.png")).subsample(30, 30)
-		self.move_header_up_button = Button(self.edit_header_buttons, image=self.up_arrow_icon, command=lambda: self.move_up(self.headers_listbox))
+		self.up_arrow_icon = PhotoImage(file = join(__location__, 'up-arrow.png')).subsample(30, 30)
+		self.move_header_up_button = Button(self.edit_header_buttons, image=self.up_arrow_icon, command=lambda: self.move_up())
 		self.move_header_up_button.grid(row=0,column=0, sticky='ew')
 
-		self.down_arrow_icon = PhotoImage(file = relpath("down-arrow.png")).subsample(30, 30)
-		self.move_header_down_button = Button(self.edit_header_buttons, image=self.down_arrow_icon, command=lambda: self.move_down(self.headers_listbox))
+		self.down_arrow_icon = PhotoImage(file = join(__location__, 'down-arrow.png')).subsample(30, 30)
+		self.move_header_down_button = Button(self.edit_header_buttons, image=self.down_arrow_icon, command=lambda: self.move_down())
 		self.move_header_down_button.grid(row=1,column=0, sticky='ew')
 
 		self.run = Button(base, text ='Run', state='disabled', command = self.run_op)
@@ -152,7 +159,6 @@ class App:
 
 	def template_file_text(self):
 		self.files.template = abspath(self.template_entry.get())
-		print(self.files.template)
 		with MailMergeTracking(self.files.template) as document:
 			fields = document.get_merge_fields()
 			fields = sorted(fields)
@@ -200,34 +206,61 @@ class App:
 	def directory_selctor_text(self):
 		self.files.folder = abspath(self.folder_entry.get())
 
-	def move_up(self, list_box):
+	def on_select(self, sender):
+		listbox = sender.widget
 		try:
-			idxs = list_box.curselection()
+			idxs = listbox.curselection()
+			if not idxs:
+				return
+			for pos in idxs:
+				self.merge_fields_listbox.selection_clear(0,END)
+				self.merge_fields_listbox.selection_set(pos)
+				self.merge_fields_listbox.activate(pos)
+
+				self.headers_listbox.selection_clear(0,END)
+				self.headers_listbox.selection_set(pos)
+				self.headers_listbox.activate(pos)
+		except:
+			pass
+
+	def move_up(self):
+		try:
+			idxs = self.headers_listbox.curselection()
 			if not idxs:
 				return
 			for pos in idxs:
 				if pos==0:
+					self.merge_fields_listbox.selection_clear(0,END)
+					self.merge_fields_listbox.selection_set(pos)
 					continue
-				text=list_box.get(pos)
-				list_box.delete(pos)
-				list_box.insert(pos-1, text)
-				list_box.selection_set(pos-1)
+				text=self.headers_listbox.get(pos)
+				self.headers_listbox.delete(pos)
+				self.headers_listbox.insert(pos-1, text)
+				self.headers_listbox.selection_set(pos-1)
+				self.headers_listbox.activate(pos-1)
+				self.merge_fields_listbox.selection_clear(0,END)
+				self.merge_fields_listbox.selection_set(pos-1)
 		except:
 			pass
 
-	def move_down(self, list_box):
+	def move_down(self):
 		try:
-			idxs = list_box.curselection()
+			idxs = self.headers_listbox.curselection()
 			if not idxs:
 				return
 			for pos in idxs:
 				# Are we at the bottom of the list?
-				if pos == list_box.size()-1: 
+				if pos == self.headers_listbox.size()-1:
+					self.merge_fields_listbox.selection_clear(0,END)
+					self.merge_fields_listbox.selection_set(pos)
 					continue
-				text=list_box.get(pos)
-				list_box.delete(pos)
-				list_box.insert(pos+1, text)
-				list_box.selection_set(pos + 1)
+				text=self.headers_listbox.get(pos)
+				self.headers_listbox.delete(pos)
+				self.headers_listbox.insert(pos+1, text)
+				self.headers_listbox.selection_set(pos+1)
+				self.headers_listbox.activate(pos+1)
+				self.merge_fields_listbox.selection_clear(0,END)
+				self.merge_fields_listbox.selection_set(pos+1)
 		except:
 			pass
 	
@@ -286,9 +319,11 @@ class Run:
 		self.running_description_label.grid(row=1, column=0, pady=(5,0), padx=5, sticky=W)
 
 		self.progress = ttk.Progressbar(self.run_popup, orient="horizontal",length=250, mode="determinate")
+		self.progress_indeterminate = ttk.Progressbar(self.run_popup, orient="horizontal",length=250, mode="indeterminate")
 		with open(self.files_info.responsesFilePath, encoding='utf8', newline='') as CSV_file:
 			self.num_records = sum(1 for row in CSV_file) - 1
 		self.progress["maximum"] = self.num_records
+		self.progress_indeterminate["maximum"] = self.num_records
 		
 		self.running_count = StringVar(value="0 of "+str(self.num_records))
 		self.running_count_label = Label(self.run_popup, textvariable=self.running_count, justify=LEFT)
@@ -311,10 +346,20 @@ class Run:
 
         # refresh the GUI with new data from the queue
 		while not self.queue.empty():
-			progress, description = self.queue.get()
-			self.progress['value'] = progress
-			self.running_description.set(description)
-			self.running_count.set(str(progress)+" of "+str(self.num_records))
+			progress, description, mode = self.queue.get()
+			if mode == "determinate":
+				self.progress['value'] = progress
+				self.running_description.set(description)
+				self.running_count.set(str(progress)+" of "+str(self.num_records))
+			elif mode == "indeterminate":
+				self.progress.destroy()
+				self.running_count_label.destroy()
+				self.progress_indeterminate.grid(row=2, column=0, columnspan=2, pady=(0,5), padx=5, sticky='ew')
+				self.progress_indeterminate.start(interval=20)
+				self.running_description.set(description)
+			elif mode == "finished":
+				self.progress_indeterminate.stop()
+
 			self.run_popup.update()
 		#  timer to refresh the gui with data from the asyncio thread
 		self.run_popup.after(1, self.refresh_data)
@@ -330,16 +375,17 @@ class Run:
 			for audition in auditions:
 				merge_data.append({field:audition[self.map[field]] for field in document.get_merge_fields()})
 				progress += 1
-				self.queue.put((progress, "Mapping data to fields..."))
-		self.queue.put((self.num_records, "Mapping data to fields..."))
+				self.queue.put((progress, "Mapping data to fields...", "determinate"))
+		self.queue.put((self.num_records, "Mapping data to fields...", "determinate"))
 
-		self.queue.put((0, "Merging into template..."))
+		self.queue.put((0, "Merging into template...", "determinate"))
 		document.merge_templates(merge_data, separator="page_break", queue=self.queue)
-		self.queue.put((self.num_records, "Merging into template..."))
+		self.queue.put((self.num_records, "Merging into template...", "determinate"))
 
 		docx_filename = str(self.files_info.filename)+".docx"
 		pdf_filename = str(self.files_info.filename)+".pdf"
 
+		self.queue.put((None, "Saving...", "indeterminate"))
 		if not isdir(self.files_info.folder):
 			mkdir(self.files_info.folder)
 
@@ -367,6 +413,7 @@ class Run:
 			except NotImplementedError:
 				pass
 		
+		self.queue.put((None, "Opening...", "indeterminate"))
 		if platform.system() == 'Darwin':       # macOS
 			if self.output_as_word:
 				subprocess.call(('open', docx_filepath))
@@ -380,6 +427,8 @@ class Run:
 		else:                                   # linux variants
 			if self.output_as_word:
 				subprocess.call(('xdg-open', docx_filepath))
+		
+		self.queue.put((None, "Saving...", "finished"))
 
 if __name__ == '__main__':
 	base = Tk()
