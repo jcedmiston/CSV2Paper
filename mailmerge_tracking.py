@@ -6,7 +6,7 @@ from mailmerge import MailMerge, NAMESPACES
 
 class MailMergeTracking(MailMerge):
     def __init__(self, file, remove_empty_tables=False):
-        super().__init__(file, remove_empty_tables=remove_empty_tables)
+        super().__init__(file, remove_empty_tables)
     
     def merge_templates(self, replacements, separator, queue):
         """
