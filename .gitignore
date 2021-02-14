@@ -129,6 +129,6 @@ dmypy.json
 .pyre/
 .vscode/settings.json
 docx2pdf.py
-CSV2Paper.iss
-CSV2Paper Installer.exe
 convert.jxa
+*.exe
+*.iss
