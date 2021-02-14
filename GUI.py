@@ -9,7 +9,7 @@ from os import chdir, environ, mkdir, unlink
 from os.path import abspath, dirname, isdir, join, normpath, realpath
 from tempfile import NamedTemporaryFile
 from tkinter import *
-from tkinter import filedialog, ttk
+from tkinter import filedialog, ttk, messagebox
 
 from docx2pdf import convert
 from dragdroplistbox import DragDropListbox
@@ -236,6 +236,7 @@ class App:
 			for pos in idxs:
 				self.merge_fields_listbox.selection_clear(0,END)
 				self.merge_fields_listbox.selection_set(pos)
+				self.merge_fields_listbox.see(pos)
 				self.merge_fields_listbox.activate(pos)
 
 				self.headers_listbox.selection_clear(0,END)
@@ -253,6 +254,7 @@ class App:
 				if pos==0:
 					self.merge_fields_listbox.selection_clear(0,END)
 					self.merge_fields_listbox.selection_set(pos)
+					self.merge_fields_listbox.see(pos)
 					continue
 				text=self.headers_listbox.get(pos)
 				self.headers_listbox.delete(pos)
@@ -274,6 +276,7 @@ class App:
 				if pos == self.headers_listbox.size()-1:
 					self.merge_fields_listbox.selection_clear(0,END)
 					self.merge_fields_listbox.selection_set(pos)
+					self.merge_fields_listbox.see(pos)
 					continue
 				text=self.headers_listbox.get(pos)
 				self.headers_listbox.delete(pos)
@@ -292,7 +295,8 @@ class App:
 			self.run.configure(state='normal')
 
 	def about_popup(self):
-		about_win = Toplevel()
+		about_win = Toplevel(takefocus=True)
+		about_win.focus_force()
 		about_win.grab_set()
 		about_win.wm_title("About CSV 2 Paper")
 		about_win.resizable(0, 0)
@@ -333,8 +337,10 @@ class Run:
 		self.output_as_word = output_as_word
 		self.output_as_pdf = output_as_pdf
 
-		self.run_popup = Toplevel()
+		self.run_popup = Toplevel(takefocus=True)
+		self.run_popup.focus_force()
 		self.run_popup.grab_set()
+		self.run_popup.protocol("WM_DELETE_WINDOW", self.on_closing)
 
 		self.run_popup.wm_title("Converting...")
 		self.run_popup.resizable(0, 0)
@@ -349,7 +355,7 @@ class Run:
 		with open(self.files.csv_file, encoding='utf8', newline='') as csv_file:
 			self.num_records = sum(1 for row in csv_file) - 1
 		self.progress["maximum"] = self.num_records
-		self.progress_indeterminate["maximum"] = self.num_records
+		self.progress_indeterminate["maximum"] = 100
 		
 		self.running_count = StringVar(value="0 of "+str(self.num_records))
 		self.running_count_label = Label(self.run_popup, textvariable=self.running_count, justify=LEFT)
@@ -389,12 +395,15 @@ class Run:
 				self.progress.destroy()
 				self.running_count_label.destroy()
 				self.progress_indeterminate.grid(row=2, column=0, columnspan=2, pady=(0,20), padx=5, sticky='ew')
-				self.progress_indeterminate.start(interval=20)
+				self.progress_indeterminate.start(20)
 				self.running_description.set(description)
+			elif mode == "holding":
+				pass
 			elif mode == "finished":
 				self.progress_indeterminate.stop()
 
 			self.run_popup.update()
+
 		#  timer to refresh the gui with data from the asyncio thread
 		self.run_popup.after(1, self.refresh_data)
 
@@ -446,7 +455,7 @@ class Run:
 			except NotImplementedError:
 				pass
 		
-		self.queue.put((None, "Opening...", "indeterminate"))
+		self.queue.put((None, "Opening...", "holding"))
 		if platform.system() == 'Darwin':       # macOS
 			if self.output_as_word:
 				subprocess.call(('open', docx_filepath))
@@ -462,6 +471,10 @@ class Run:
 				subprocess.call(('xdg-open', docx_filepath))
 		
 		self.queue.put((None, "Opening...", "finished"))
+	
+	def on_closing(self):
+		if messagebox.askyesno("Cancel", "Are you sure you want to cancel?"):
+			self.run_popup.destroy()
 
 if __name__ == '__main__':
 	base = Tk()
