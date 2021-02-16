@@ -127,8 +127,13 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
-.vscode/settings.json
+
+.vscode/
 docx2pdf.py
 convert.jxa
 *.exe
 *.iss
+freeze_setup_files/
+installers/
+BundledResources/version.json
+pip-licenses cmd.txt
