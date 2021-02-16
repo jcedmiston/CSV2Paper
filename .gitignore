@@ -135,5 +135,5 @@ convert.jxa
 *.iss
 freeze_setup_files/
 installers/
-BundledResources/version.json
+resources/version.json
 pip-licenses cmd.txt

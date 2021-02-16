@@ -10,7 +10,7 @@ from tkinter import ttk
 import aiohttp
 
 from files import __location__
-from WindowsStyleButton import WindowsButton
+from windows_style_button import WindowsButton
 
 
 async def get_update_installer(url):
@@ -60,7 +60,7 @@ class Updater:
         self.progress_indeterminate.start(20)
 
         self.current_version = None
-        with open(path.join(__location__, 'BundledResources','version.json'), 'r') as current_version_source:
+        with open(path.join(__location__, 'resources','version.json'), 'r') as current_version_source:
             self.current_version = json.load(current_version_source)
         
         #self.label_group = Frame(self.update_popup, bg='white', highlightcolor='white', highlightbackground='white', bd=0, highlightthickness=0)
