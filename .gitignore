@@ -133,5 +133,6 @@ docx2pdf.py
 convert.jxa
 *.exe
 *.iss
-.freeze_setup_files/
-.installers/
+freeze_setup_files/
+installers/
+BundledResources/version.json
