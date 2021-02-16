@@ -136,3 +136,4 @@ convert.jxa
 freeze_setup_files/
 installers/
 BundledResources/version.json
+pip-licenses cmd.txt

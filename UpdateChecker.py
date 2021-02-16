@@ -1,19 +1,21 @@
 import asyncio
-import aiohttp
 import json
-import requests
 import subprocess
 import threading
-import queue
-from os import unlink, path
-from tempfile import NamedTemporaryFile, TemporaryDirectory, gettempdir
+from os import path
+from tempfile import gettempdir
 from tkinter import *
 from tkinter import ttk
+
+import aiohttp
+
+from files import __location__
 from WindowsStyleButton import WindowsButton
+
 
 async def get_update_installer(url):
     filename = url.split("/")[-1]
-    async with asyncio.BoundedSemaphore(5), aiohttp.ClientSession() as session:
+    async with aiohttp.ClientSession() as session:
         async with session.get(url, headers={'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36'}) as update_download:
             assert update_download.status == 200
             installer = await update_download.read()
@@ -24,7 +26,7 @@ async def get_update_installer(url):
     subprocess.Popen([path.join(gettempdir(),filename), "/SILENT"])
 
 async def get_update_info():
-    async with asyncio.BoundedSemaphore(5), aiohttp.ClientSession() as session:
+    async with aiohttp.ClientSession() as session:
         async with session.get("https://jcedmiston.me/s/update.json", headers={'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36'}) as update_info:
             assert update_info.status == 200
             return await update_info.json()
@@ -58,7 +60,7 @@ class Updater:
         self.progress_indeterminate.start(20)
 
         self.current_version = None
-        with open('version.json', 'r') as current_version_source:
+        with open(path.join(__location__, 'BundledResources','version.json'), 'r') as current_version_source:
             self.current_version = json.load(current_version_source)
         
         #self.label_group = Frame(self.update_popup, bg='white', highlightcolor='white', highlightbackground='white', bd=0, highlightthickness=0)
@@ -111,6 +113,8 @@ class Updater:
                 self.base.destroy()
             else:
                 self.on_closing()
+        else:
+            self.on_closing()
 
     def check_for_updates(self):
         try:

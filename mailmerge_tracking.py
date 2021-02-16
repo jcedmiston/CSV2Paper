@@ -1,8 +1,9 @@
 from copy import deepcopy
-from tkinter.constants import N
-from lxml.etree import Element
+
 from lxml import etree
-from mailmerge import MailMerge, NAMESPACES
+from lxml.etree import Element
+from mailmerge import NAMESPACES, MailMerge
+
 
 class MailMergeTracking(MailMerge):
     def __init__(self, file, remove_empty_tables=False):

@@ -3,34 +3,20 @@ import os
 import platform
 import queue
 import subprocess
-import sys
 import threading
-from os import chdir, environ, mkdir, unlink
-from os.path import abspath, dirname, isdir, join, normpath, realpath
+from os import mkdir, unlink
+from os.path import abspath, isdir, join, normpath
 from tempfile import NamedTemporaryFile
 from tkinter import *
-from tkinter import filedialog, ttk, messagebox
+from tkinter import filedialog, messagebox, ttk
 
 from docx2pdf import convert
 from dragdroplistbox import DragDropListbox
-from UpdateChecker import Updater
-from files import FilePaths
+from files import FilePaths, __location__
 from mailmerge_tracking import MailMergeTracking
+from UpdateChecker import Updater
 from WindowsStyleButton import WindowsButton
 
-if hasattr(sys, '_MEIPASS'):
-    # PyInstaller >= 1.6
-    chdir(sys._MEIPASS)
-    application_path = join(sys._MEIPASS)
-elif '_MEIPASS2' in environ:
-    # PyInstaller < 1.6 (tested on 1.5 only)
-    chdir(environ['_MEIPASS2'])
-    application_path = join(environ['_MEIPASS2'])
-else:
-    chdir(dirname(sys.argv[0]))
-    application_path = join(dirname(sys.argv[0]))
-	
-__location__ = realpath(application_path)
 
 class App:
 	def __init__(self, base):

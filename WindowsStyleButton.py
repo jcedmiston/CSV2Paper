@@ -1,5 +1,6 @@
-from tkinter import Button, Frame
 from tkinter import *
+from tkinter import Button, Frame
+
 
 class WindowsButton(Frame, Button):
     def __init__(self, master=None, cnf={}, text=None, state='normal', command=None, **kw):
