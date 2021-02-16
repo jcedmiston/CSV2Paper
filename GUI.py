@@ -13,8 +13,10 @@ from tkinter import filedialog, ttk, messagebox
 
 from docx2pdf import convert
 from dragdroplistbox import DragDropListbox
+from UpdateChecker import Updater
 from files import FilePaths
 from mailmerge_tracking import MailMergeTracking
+from WindowsStyleButton import WindowsButton
 
 if hasattr(sys, '_MEIPASS'):
     # PyInstaller >= 1.6
@@ -39,7 +41,8 @@ class App:
 		self.base.columnconfigure(1,weight=1)    #confiugures to stretch with a scaler of 1.
 		self.base.rowconfigure(5,weight=1)
 		self.base.columnconfigure(2,weight=1)
-		
+		self.base.protocol("WM_DELETE_WINDOW", self.on_closing)
+
 		self.menu_bar = Menu(base)
 		
 		self.help_menu = Menu(self.menu_bar, tearoff=0)
@@ -146,8 +149,11 @@ class App:
 		self.move_header_down_button = Button(self.edit_header_buttons, image=self.down_arrow_icon, command=lambda: self.move_down())
 		self.move_header_down_button.grid(row=1,column=0, sticky='ew')
 
-		self.run = Button(base, text ='Run', state='disabled', command = self.run_op)
+		self.run = WindowsButton(base, text ='Run', state='disabled', command = self.run_op)
 		self.run.grid(row=6,column=1, columnspan=2,padx=5,pady=5)
+		
+		self.base.withdraw()
+		Updater(self.base)
 
 	def template_file_opener(self):
 		template_file = filedialog.askopenfilename(filetypes=[("Word Document", ".docx")])
@@ -314,7 +320,6 @@ class App:
 		geom = "+%d+%d" % (x+x_offset,y+y_offset)
 		about_win.wm_geometry(geom)
 
-
 	def map_fields(self):
 		headers = self.headers_listbox.get(0,END)
 		fields = self.merge_fields_listbox.get(0,END)
@@ -329,6 +334,9 @@ class App:
 		self.files.csv_file = self.csv_entry.get()
 		self.files.folder = self.folder_entry.get()
 		Run(self.base, map, self.files, self.output_as_word.get(), self.output_as_word.get())
+
+	def on_closing(self):
+		self.base.destroy()
 
 class Run:
 	def __init__(self, base, map, files, output_as_word, output_as_pdf):
