@@ -129,7 +129,6 @@ dmypy.json
 .pyre/
 
 .vscode/
-docx2pdf.py
 convert.jxa
 *.exe
 *.iss

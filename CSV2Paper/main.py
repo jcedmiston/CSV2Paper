@@ -1,5 +1,4 @@
 from tkinter import *
-from test import Test
 from main_window import MainWindow
 
 if __name__ == '__main__':
