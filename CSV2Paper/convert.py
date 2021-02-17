@@ -35,8 +35,11 @@ class Convert:
 		self.running_description_label = Label(self.run_popup, textvariable=self.running_description, justify=LEFT)
 		self.running_description_label.grid(row=1, column=0, pady=(10,0), padx=5, sticky=W)
 
-		self.progress = ttk.Progressbar(self.run_popup, orient="horizontal",length=250, mode="determinate")
-		self.progress_indeterminate = ttk.Progressbar(self.run_popup, orient="horizontal",length=250, mode="indeterminate")
+		s = ttk.Style()
+		s.theme_use('alt')
+		s.configure('blue.Horizontal.TProgressbar', troughcolor  = 'gray35', troughrelief = 'flat', background = '#2f92ff')
+		self.progress = ttk.Progressbar(self.run_popup, style = 'blue.Horizontal.TProgressbar', orient="horizontal",length=250, mode="determinate")
+		self.progress_indeterminate = ttk.Progressbar(self.run_popup, style = 'blue.Horizontal.TProgressbar', orient="horizontal",length=250, mode="indeterminate")
 		with open(self.files.csv_file, encoding='utf8', newline='') as csv_file:
 			self.num_records = sum(1 for row in csv_file) - 1
 		self.progress["maximum"] = self.num_records
@@ -158,5 +161,5 @@ class Convert:
 		self.queue.put((None, "Opening...", "finished"))
 	
 	def on_closing(self):
-		if messagebox.askyesno("Cancel", "Are you sure you want to cancel?"):
+		if messagebox.askyesno("CSV 2 Paper", "Are you sure you want to cancel?"):
 			self.run_popup.destroy()

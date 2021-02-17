@@ -3,11 +3,13 @@ from os.path import abspath, join
 from tkinter import *
 from tkinter import filedialog
 
+from convert import Convert
 from drag_drop_listbox import DragDropListbox
 from files import FilePaths, __location__
 from mailmerge_tracking import MailMergeTracking
 from update_checker import Updater
 from windows_style_button import WindowsButton
+from windows_title_bar_button import WindowsTitleBarButton
 
 
 class MainWindow:
@@ -16,6 +18,7 @@ class MainWindow:
 
 		self.base = base
 		self.base.title("CSV 2 Paper")
+		self.base.configure(bg='gray15')
 		self.base.columnconfigure(1,weight=1)    #confiugures to stretch with a scaler of 1.
 		self.base.rowconfigure(5,weight=1)
 		self.base.columnconfigure(2,weight=1)
@@ -29,102 +32,103 @@ class MainWindow:
 		
 		self.base.config(menu=self.menu_bar)
 
+		self.folder_open_icon = PhotoImage(file = join(__location__, 'resources', 'folder_open', '2x', 'sharp_folder_open_white_48dp.png')).subsample(6,6)
 
 		self.template = StringVar(value="Word Template")
-		self.template_entry = Entry(textvariable=self.template)
+		self.template_entry = Entry(textvariable=self.template, bg='gray35', fg='white', relief=FLAT, insertbackground='white')
 		self.template_entry.configure(validate="focusout", validatecommand = lambda:self.template_file_text())
-		self.template_file_selector = WindowsButton(base, text ='+', command = lambda:self.template_file_opener())
+		self.template_file_selector = WindowsButton(base, image=self.folder_open_icon, command = lambda:self.template_file_opener())
 		self.template_entry.grid(row=1,column=1,columnspan=2,sticky='we',padx=(5, 30),pady=(0,0))
 		self.template_file_selector.grid(row=1,column=1,columnspan=2,sticky=E,padx=(0, 5),pady=5)
 
 
 		self.csv = StringVar(value="CSV")
-		self.csv_entry = Entry(state='disabled', textvariable=self.csv)
+		self.csv_entry = Entry(state='disabled', textvariable=self.csv, bg='gray35', fg='white', relief=FLAT, disabledbackground='gray20', insertbackground='white')
 		self.csv_entry.configure(validate="focusout", validatecommand = lambda:self.csv_file_text())
-		self.csv_file_selector = WindowsButton(base, text ='+', state='disabled', command = lambda:self.csv_file_opener())
+		self.csv_file_selector = WindowsButton(base, image=self.folder_open_icon, state='disabled', command = lambda:self.csv_file_opener())
 		self.csv_entry.grid(row=2,column=1,columnspan=2,sticky='we',padx=(5, 30),pady=5)
 		self.csv_file_selector.grid(row=2,column=1,columnspan=2,sticky=E,padx=(0, 5),pady=5)
 
 
 		self.folder = StringVar(value="Output Folder")
-		self.folder_entry = Entry(state='disabled', textvariable=self.folder)
+		self.folder_entry = Entry(state='disabled', textvariable=self.folder, bg='gray35', fg='white', relief=FLAT, disabledbackground='gray20', insertbackground='white')
 		self.folder_entry.configure(validate="focusout", validatecommand = lambda:self.directory_selctor_text())
-		self.folder_selector = WindowsButton(base, text ='+', state='disabled', command = lambda:self.directory_selector())
+		self.folder_selector = WindowsButton(base, image=self.folder_open_icon, state='disabled', command = lambda:self.directory_selector())
 		self.folder_entry.grid(row=3,column=1,columnspan=2,sticky='we',padx=(5, 30),pady=5)
 		self.folder_selector.grid(row=3,column=1,columnspan=2,sticky=E,padx=(0, 5),pady=5)
 
 
-		self.file_output_info_group = Frame(base)
+		self.file_output_info_group = Frame(base, bg='gray15')
 		self.file_output_info_group.grid(row=4,column=1, columnspan=2,padx=5,pady=5, sticky='nsew')
 		self.file_output_info_group.columnconfigure(0,weight=1)
 		self.file_output_info_group.rowconfigure(0,weight=1)
 
 		self.filename = StringVar(value="Output File")
-		self.filename_entry = Entry(self.file_output_info_group, state='disabled', textvariable=self.filename)
+		self.filename_entry = Entry(self.file_output_info_group, state='disabled', textvariable=self.filename, bg='gray35', fg='white', relief=FLAT, disabledbackground='gray20', insertbackground='white')
 
 		self.output_as_word = BooleanVar(value=True)
-		self.docx_checkbox = Checkbutton(self.file_output_info_group, state='disabled', text='Word', variable=self.output_as_word, onvalue=True, offvalue=False, command=self.check_runnable)
+		self.docx_checkbox = Checkbutton(self.file_output_info_group, state='disabled', relief=FLAT, activebackground='gray15', selectcolor="gray30", activeforeground='white', bg='gray15', fg='white', text='Word', variable=self.output_as_word, onvalue=True, offvalue=False, command=self.check_runnable)
 		
 		self.output_as_pdf = BooleanVar(value=True)
-		self.pdf_checkbox = Checkbutton(self.file_output_info_group, state='disabled', text='PDF', variable=self.output_as_pdf, onvalue=True, offvalue=False, command=self.check_runnable)
+		self.pdf_checkbox = Checkbutton(self.file_output_info_group, state='disabled', relief=FLAT, activebackground='gray15', selectcolor="gray30", activeforeground='white', bg='gray15', fg='white', text='PDF', variable=self.output_as_pdf, onvalue=True, offvalue=False, command=self.check_runnable)
 
 		self.filename_entry.grid(row=0,column=0,sticky='we',padx=(0, 30))
 		self.docx_checkbox.grid(row=0,column=1,sticky='we',padx=(5, 30))
 		self.pdf_checkbox.grid(row=0,column=3,sticky='we',padx=(5, 30))
 
 
-		self.left_merge_fields_group = Frame(base)
+		self.left_merge_fields_group = Frame(base, bg='gray15')
 		self.left_merge_fields_group.grid(row=5,column=1, padx=5,pady=5, sticky='nsew')
 		self.left_merge_fields_group.columnconfigure(0,weight=1)
 		self.left_merge_fields_group.rowconfigure(1,weight=1)
 
-		self.merge_field_label = Label(self.left_merge_fields_group, text="Template Fields", justify=CENTER, padx=10, pady=5)
+		self.merge_field_label = Label(self.left_merge_fields_group, bg='gray15', fg='white', text="Template Fields", justify=CENTER, padx=10, pady=5)
 		self.merge_field_label.grid(row=0,column=0, sticky='nsew')
 
-		self.scroll_merge_fields_y = Scrollbar(self.left_merge_fields_group, orient=VERTICAL)
-		self.scroll_merge_fields_x = Scrollbar(self.left_merge_fields_group, orient=HORIZONTAL)
+		self.scroll_merge_fields_y = Scrollbar(self.left_merge_fields_group, orient=VERTICAL, activerelief=FLAT, relief=FLAT, troughcolor='red', activebackground='red')
+		self.scroll_merge_fields_x = Scrollbar(self.left_merge_fields_group, orient=HORIZONTAL, activerelief=FLAT, relief=FLAT, troughcolor='red', activebackground='red')
 
-		self.merge_fields_listbox = Listbox(self.left_merge_fields_group, height=20, width=30, yscrollcommand=self.scroll_merge_fields_y.set, xscrollcommand=self.scroll_merge_fields_x.set, exportselection=0)
+		self.merge_fields_listbox = Listbox(self.left_merge_fields_group, bd=0, highlightthickness=0, bg='gray35', fg='white', height=20, width=30, relief=FLAT, yscrollcommand=self.scroll_merge_fields_y.set, xscrollcommand=self.scroll_merge_fields_x.set, exportselection=0)
 		self.merge_fields_listbox.bind("<<ListboxSelect>>", self.on_select)
 		self.merge_fields_listbox.grid(row=1,column=0, sticky='nsew')
 
 		self.scroll_merge_fields_y.config(command = self.merge_fields_listbox.yview)
-		self.scroll_merge_fields_y.grid(row=1,column=1, sticky='nsew')
+		#self.scroll_merge_fields_y.grid(row=1,column=1, sticky='nsew')
 
 		self.scroll_merge_fields_x.config(command = self.merge_fields_listbox.xview)
-		self.scroll_merge_fields_x.grid(row=2,column=0, sticky='nsew')
+		#self.scroll_merge_fields_x.grid(row=2,column=0, sticky='nsew')
 
 
-		self.right_headers_group = Frame(base)
+		self.right_headers_group = Frame(base, bg='gray15')
 		self.right_headers_group.grid(row=5,column=2, padx=5,pady=5, sticky='nsew')
 		self.right_headers_group.columnconfigure(0,weight=1)
 		self.right_headers_group.rowconfigure(1,weight=1)
 
-		self.headers_label = Label(self.right_headers_group, text="Data Headers", justify=CENTER, padx=10, pady=5)
+		self.headers_label = Label(self.right_headers_group, bg='gray15', fg='white', text="Data Headers", justify=CENTER, padx=10, pady=5)
 		self.headers_label.grid(row=0,column=0, sticky='nsew')
 
-		self.scroll_headers_y = Scrollbar(self.right_headers_group, orient=VERTICAL)
-		self.scroll_headers_x = Scrollbar(self.right_headers_group, orient=HORIZONTAL)
+		self.scroll_headers_y = Scrollbar(self.right_headers_group, orient=VERTICAL, activerelief=FLAT, relief=FLAT, troughcolor='red', activebackground='red')
+		self.scroll_headers_x = Scrollbar(self.right_headers_group, orient=HORIZONTAL, activerelief=FLAT, relief=FLAT, troughcolor='red', activebackground='red')
 
-		self.headers_listbox = Listbox(self.right_headers_group, height=20, width=30, yscrollcommand=self.scroll_headers_y.set, xscrollcommand=self.scroll_headers_x.set, exportselection=0, )
+		self.headers_listbox = Listbox(self.right_headers_group, bd=0, highlightthickness=0, bg='gray35', fg='white', height=20, width=30, relief=FLAT, yscrollcommand=self.scroll_headers_y.set, xscrollcommand=self.scroll_headers_x.set, exportselection=0, )
 		self.headers_listbox.bind("<<ListboxSelect>>", self.on_select)
 		self.headers_listbox.grid(row=1,column=0, sticky='nsew')
 
 		self.scroll_headers_y.config(command = self.headers_listbox.yview)
-		self.scroll_headers_y.grid(row=1,column=1, sticky='nsew')
+		#self.scroll_headers_y.grid(row=1,column=1, sticky='nsew')
 
 		self.scroll_headers_x.config(command = self.headers_listbox.xview)
-		self.scroll_headers_x.grid(row=2,column=0, sticky='nsew')
+		#self.scroll_headers_x.grid(row=2,column=0, sticky='nsew')
 
-		self.edit_header_buttons = Frame(self.right_headers_group)
+		self.edit_header_buttons = Frame(self.right_headers_group, bg='gray15')
 		self.edit_header_buttons.grid(row=1,column=2, rowspan=2, padx=5,pady=5, sticky='nsew')
 
-		self.up_arrow_icon = PhotoImage(file = join(__location__, 'resources','up-arrow.png')).subsample(30, 30)
-		self.move_header_up_button = Button(self.edit_header_buttons, image=self.up_arrow_icon, command=lambda: self.move_up())
+		self.up_arrow_icon = PhotoImage(file = join(__location__, 'resources', 'cheveron_up', '2x', 'sharp_chevron_up_white_48dp.png')).subsample(4, 4)
+		self.move_header_up_button = WindowsButton(self.edit_header_buttons, image=self.up_arrow_icon, command=lambda: self.move_up())
 		self.move_header_up_button.grid(row=0,column=0, sticky='ew')
 
-		self.down_arrow_icon = PhotoImage(file = join(__location__, 'resources', 'down-arrow.png')).subsample(30, 30)
-		self.move_header_down_button = Button(self.edit_header_buttons, image=self.down_arrow_icon, command=lambda: self.move_down())
+		self.down_arrow_icon = PhotoImage(file = join(__location__, 'resources', 'cheveron_down', '2x', 'sharp_chevron_down_white_48dp.png')).subsample(4, 4)
+		self.move_header_down_button = WindowsButton(self.edit_header_buttons, image=self.down_arrow_icon, command=lambda: self.move_down())
 		self.move_header_down_button.grid(row=1,column=0, sticky='ew')
 
 		self.run = WindowsButton(base, text ='Run', state='disabled', command = self.run_op)
@@ -311,7 +315,7 @@ class MainWindow:
 		self.files.template = self.template_entry.get()
 		self.files.csv_file = self.csv_entry.get()
 		self.files.folder = self.folder_entry.get()
-		Run(self.base, map, self.files, self.output_as_word.get(), self.output_as_word.get())
+		Convert(self.base, map, self.files, self.output_as_word.get(), self.output_as_word.get())
 
 	def on_closing(self):
 		self.base.destroy()

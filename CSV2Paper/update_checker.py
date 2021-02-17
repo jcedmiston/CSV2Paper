@@ -11,6 +11,7 @@ import aiohttp
 
 from files import __location__
 from windows_style_button import WindowsButton
+from windows_title_bar_button import WindowsTitleBarButton
 
 
 async def get_update_installer(url):
@@ -46,17 +47,33 @@ class Updater:
         self.update_popup.wm_geometry(geom)
         self.update_popup.protocol("WM_DELETE_WINDOW", self.on_closing)
         
-        self.update_popup.wm_title("Checking for updates...")
-        self.update_popup.resizable(0, 0)
+        #self.update_popup.wm_title("Checking for updates...")
+        self.update_popup.overrideredirect(True)
+        self.update_popup.resizable(False, False)
+        self.update_popup.rowconfigure(0,weight=1)
         self.update_popup.columnconfigure(0,weight=1)
+        self.update_popup.configure(bg='gray15')
+
+        self.title_bar = Frame(self.update_popup, bg="gray20")
+        self.close_button = WindowsTitleBarButton(self.title_bar, text='X', width=45, height=28, command=self.on_closing)
+        self.close_button.pack(side=RIGHT)
+
+        self.title_bar.grid(row=0, column=0, columnspan=100, sticky='nsew')
+        
+
+        # bind title bar motion to the move window function
+        #self.title_bar.bind('<B1-Motion>', self.move_window)
+        self.title_bar.bind('<Button-1>', self.get_pos)
 
 		#self.running_description = StringVar(value="Mapping data to fields...")
 		#self.running_description_label = Label(self.update_popup, textvariable=self.running_description, justify=LEFT)
 		#self.running_description_label.grid(row=1, column=0, pady=(10,0), padx=5, sticky=W)
-        
-        self.progress_indeterminate = ttk.Progressbar(self.update_popup, orient="horizontal",length=300, mode="indeterminate")
+        s = ttk.Style()
+        s.theme_use('alt')
+        s.configure('blue.Horizontal.TProgressbar', troughcolor  = 'gray35', troughrelief = 'flat', background = '#2f92ff')
+        self.progress_indeterminate = ttk.Progressbar(self.update_popup, style = 'blue.Horizontal.TProgressbar', orient="horizontal",length=300, mode="indeterminate")
         self.progress_indeterminate["maximum"] = 100
-        self.progress_indeterminate.grid(row=0, column=0, columnspan=2, pady=5, padx=5, sticky='ew')
+        self.progress_indeterminate.grid(row=1, column=0, columnspan=2, pady=5, padx=5, sticky='ew')
         self.progress_indeterminate.start(20)
 
         self.current_version = None
@@ -94,14 +111,14 @@ class Updater:
         if self.update_available:
             self.progress_indeterminate.destroy()
             self.update_popup.wm_title("New Version")
-            self.new_version_avail_text.grid(row=0, column=0, columnspan=2, pady=(5,0), padx=5, sticky='nswe')
-            self.current_version_num_label.grid(row=1, column=0, padx=5, sticky='nswe')
+            self.new_version_avail_text.grid(row=1, column=0, columnspan=2, pady=(5,0), padx=5, sticky='nswe')
+            self.current_version_num_label.grid(row=2, column=0, padx=5, sticky='nswe')
             self.new_version_num.set(value = "New Version: "+self.updated_version_num)
-            self.new_version_num_label.grid(row=1, column=1, padx=15, sticky='nswe')
+            self.new_version_num_label.grid(row=2, column=1, padx=15, sticky='nswe')
             #self.label_group.grid(row=0, column=0, pady=5, columnspan=3, padx=5, sticky='nswe')
-            self.install_now_button.grid(row=2, column=0, pady=5, padx=5, sticky='we')
+            self.install_now_button.grid(row=3, column=0, pady=5, padx=5, sticky='we')
             self.install_now_button.focus()
-            self.maybe_later_button.grid(row=2, column=1, pady=5, padx=5, sticky='we')
+            self.maybe_later_button.grid(row=3, column=1, pady=5, padx=5, sticky='we')
             self.update_popup.update()
             self.update_popup.wait_variable(self.install_now)
 
@@ -138,3 +155,24 @@ class Updater:
         self.base.deiconify()
         self.update_popup.grab_release()
         self.update_popup.destroy()
+
+    def move_window(self, event):
+        self.update_popup.geometry('+{0}+{1}'.format(event.x_root, event.y_root))
+
+    def get_pos(self, event):
+        xwin = self.update_popup.winfo_x()
+        ywin = self.update_popup.winfo_y()
+        startx = event.x_root
+        starty = event.y_root
+
+        ywin = ywin - starty
+        xwin = xwin - startx
+
+
+        def move_window(event):
+            self.update_popup.geometry('+{0}+{1}'.format(event.x_root + xwin, event.y_root + ywin))
+        
+        startx = event.x_root
+        starty = event.y_root
+
+        self.title_bar.bind('<B1-Motion>', move_window)
