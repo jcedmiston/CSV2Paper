@@ -19,7 +19,7 @@ async def get_update_installer(url):
     async with aiohttp.ClientSession() as session:
         async with session.get(url, headers={'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36'}) as update_download:
             assert update_download.status == 200
-            installer = await update_download.read()
+            installer = await asyncio.wait_for(update_download.read(), 180)
     with open(path.join(gettempdir(), filename), 'wb') as installer_file:
         installer_file.write(installer)
         print(gettempdir())
@@ -30,7 +30,7 @@ async def get_update_info():
     async with aiohttp.ClientSession() as session:
         async with session.get("https://jcedmiston.me/s/update.json", headers={'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36'}) as update_info:
             assert update_info.status == 200
-            return await update_info.json()
+            return await asyncio.wait_for(update_info.json(), 60)
 
 class Updater:
     def __init__(self, base):
@@ -55,9 +55,10 @@ class Updater:
         self.update_popup.configure(bg='gray15')
 
         self.title_bar = Frame(self.update_popup, bg="gray20")
-        self.close_button = WindowsTitleBarButton(self.title_bar, text='X', width=45, height=28, command=self.on_closing)
+        self.close_button = WindowsTitleBarButton(self.title_bar, width=45, height=28, command=self.on_closing)
         self.close_button.pack(side=RIGHT)
-
+        self.win_title = Label(self.title_bar, bg='gray20', fg='white', padx=4, bd=0, text="CSV 2 Paper")
+        self.win_title.pack(side=LEFT)
         self.title_bar.grid(row=0, column=0, columnspan=100, sticky='nsew')
         
 
@@ -82,10 +83,10 @@ class Updater:
         
         #self.label_group = Frame(self.update_popup, bg='white', highlightcolor='white', highlightbackground='white', bd=0, highlightthickness=0)
 
-        self.new_version_avail_text = Label(self.update_popup, bd=0, text="There is a new version available!", justify=CENTER)
-        self.current_version_num_label = Label(self.update_popup, bd=0, text="Current Version: "+self.current_version['exec_version'], justify=CENTER)
+        self.new_version_avail_text = Label(self.update_popup, bg='gray15', fg='white', bd=0, text="There is a new version available!", justify=CENTER)
+        self.current_version_num_label = Label(self.update_popup, bg='gray15', fg='white', bd=0, text="Current Version: "+self.current_version['exec_version'], justify=CENTER)
         self.new_version_num = StringVar()
-        self.new_version_num_label = Label(self.update_popup, bd=0, textvariable=self.new_version_num, justify=CENTER)
+        self.new_version_num_label = Label(self.update_popup, bg='gray15', fg='white', bd=0, textvariable=self.new_version_num, justify=CENTER)
         
         #self.new_version_avail_text.grid(row=0, column=0, columnspan=2, pady=(5,0), padx=5, sticky='nswe')
         #self.current_version_num_label.grid(row=1, column=0, padx=5, sticky='nswe')
@@ -95,18 +96,21 @@ class Updater:
         #self.install_now_button = Button(self.update_popup, relief=GROOVE, activebackground='#e5f1fb', text="Install Now", command=lambda: self.install_now.set(True))
         #self.maybe_later_button = Button(self.update_popup, relief=GROOVE, text="Maybe Later", command=lambda: self.install_now.set(False))
         
-        self.install_now_button = WindowsButton(self.update_popup, text="Install Now", command=lambda: self.install_now.set(True))
-        self.maybe_later_button = WindowsButton(self.update_popup, text="Maybe Later", command=lambda: self.install_now.set(False))
+        self.install_now_button = WindowsButton(self.update_popup, darkmode=True, highlight=True, text="Install Now", command=lambda: self.install_now.set(True))
+        self.maybe_later_button = WindowsButton(self.update_popup, darkmode=True, text="Maybe Later", command=lambda: self.install_now.set(False))
 
         self.update_available = False
         self.update_installer_url = None
         self.updated_version_num = None
         self.update_popup.update()
 
-        self.check_thread = threading.Thread(target=self.check_for_updates)
-        self.check_thread.start()
-        while self.check_thread.is_alive():
-            self.update_popup.update()
+        try:
+            self.check_thread = threading.Thread(target=self.check_for_updates)
+            self.check_thread.start()
+            while self.check_thread.is_alive():
+                self.update_popup.update()
+        except (AssertionError, asyncio.TimeoutError):
+            self.on_closing()
 
         if self.update_available:
             self.progress_indeterminate.destroy()
@@ -117,17 +121,20 @@ class Updater:
             self.new_version_num_label.grid(row=2, column=1, padx=15, sticky='nswe')
             #self.label_group.grid(row=0, column=0, pady=5, columnspan=3, padx=5, sticky='nswe')
             self.install_now_button.grid(row=3, column=0, pady=5, padx=5, sticky='we')
-            self.install_now_button.focus()
+            #self.install_now_button.focus()
             self.maybe_later_button.grid(row=3, column=1, pady=5, padx=5, sticky='we')
             self.update_popup.update()
             self.update_popup.wait_variable(self.install_now)
 
             if self.install_now.get():
-                self.download_thread = threading.Thread(target=self.download_installer)
-                self.download_thread.start()
-                while self.download_thread.is_alive():
-                    self.update_popup.update()
-                self.base.destroy()
+                try:
+                    self.download_thread = threading.Thread(target=self.download_installer)
+                    self.download_thread.start()
+                    while self.download_thread.is_alive():
+                        self.update_popup.update()
+                    self.base.destroy()
+                except (AssertionError, asyncio.TimeoutError):
+                    self.on_closing()
             else:
                 self.on_closing()
         else:

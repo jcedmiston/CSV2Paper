@@ -137,3 +137,5 @@ installers/
 resources/version.json
 pip-licenses cmd.txt
 .DS_Store
+CSV2Paper/resources/version.json
+CSV2Paper/resources/version.json
