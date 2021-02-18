@@ -129,11 +129,13 @@ dmypy.json
 .pyre/
 
 .vscode/
-docx2pdf.py
 convert.jxa
 *.exe
 *.iss
 freeze_setup_files/
 installers/
-BundledResources/version.json
+resources/version.json
 pip-licenses cmd.txt
+.DS_Store
+CSV2Paper/resources/version.json
+CSV2Paper/resources/version.json
