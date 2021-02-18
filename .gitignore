@@ -136,3 +136,4 @@ freeze_setup_files/
 installers/
 resources/version.json
 pip-licenses cmd.txt
+.DS_Store
