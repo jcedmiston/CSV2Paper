@@ -4,18 +4,17 @@ from tkinter import *
 from tkinter import filedialog
 
 from convert import Convert
-from drag_drop_listbox import DragDropListbox
 from files import FilePaths, __location__
 from mailmerge_tracking import MailMergeTracking
 from update_checker import Updater
+from user_settings import UserSettings
 from windows_style_button import WindowsButton
-from windows_title_bar_button import WindowsTitleBarButton
-from detect_dark_mode import is_system_dark
 
 
 class MainWindow:
-	def __init__(self, base):
-		self.dark_mode = is_system_dark()
+	def __init__(self, base: Tk, user_settings: UserSettings):
+		self.user_settings = user_settings
+		
 		self.files = FilePaths()
 
 		self.window_bg = None
@@ -41,16 +40,23 @@ class MainWindow:
 
 		# setup main window attributes
 		self.base = base
+		if self.user_settings.check_for_updates_on_start.get():
+			self.base.withdraw()
 		self.base.title("CSV 2 Paper")
 		self.base.columnconfigure(1,weight=1)    #confiugures to stretch with a scaler of 1.
 		self.base.rowconfigure(5,weight=1)
 		self.base.columnconfigure(2,weight=1)
 		self.base.protocol("WM_DELETE_WINDOW", self.on_closing)
-
+		
 		# setup menubar
 		self.menu_bar = Menu(base)
 		self.options_menu = Menu(self.menu_bar, tearoff=0)
-		self.options_menu.add_command(label="Switch Theme", command=lambda: self.set_mode(True))
+		self.switch_theme = Menu(self.menu_bar, tearoff=0)
+		self.switch_theme.add_radiobutton(label="Use System Theme", value='system', variable=self.user_settings.default_theme, command=lambda:self.set_mode())
+		self.switch_theme.add_radiobutton(label="Dark", value="dark", variable=self.user_settings.default_theme, command=lambda:self.set_mode())
+		self.switch_theme.add_radiobutton(label="Light", value="light", variable=self.user_settings.default_theme, command=lambda:self.set_mode())
+		self.options_menu.add_checkbutton(label='Check for updates on start', variable=self.user_settings.check_for_updates_on_start, onvalue=True, offvalue=False)
+		self.options_menu.add_cascade(label="Switch Theme", menu=self.switch_theme)
 		self.menu_bar.add_cascade(label="Options", menu=self.options_menu)
 		self.help_menu = Menu(self.menu_bar, tearoff=0)
 		self.help_menu.add_command(label="About...", command=self.about_popup)
@@ -60,7 +66,7 @@ class MainWindow:
 		self.template = StringVar(value="Word Template")
 		self.template_entry = Entry(textvariable=self.template, relief=FLAT)
 		self.template_entry.configure(validate="focusout", validatecommand = lambda:self.template_file_text())
-		self.template_file_selector = WindowsButton(base, darkmode=self.dark_mode, image_filename=self.folder_icon_file, subx=6, suby=6, command = lambda:self.template_file_opener())
+		self.template_file_selector = WindowsButton(base, darkmode=self.user_settings.dark_mode_enabled, image_filename=self.folder_icon_file, subx=6, suby=6, command = lambda:self.template_file_opener())
 		self.template_entry.grid(row=1,column=1,columnspan=2,sticky='we',padx=(5, 30),pady=(0,0))
 		self.template_file_selector.grid(row=1,column=1,columnspan=2,sticky=E,padx=(0, 5),pady=5)
 
@@ -68,7 +74,7 @@ class MainWindow:
 		self.csv = StringVar(value="CSV")
 		self.csv_entry = Entry(state='disabled', textvariable=self.csv, relief=FLAT)
 		self.csv_entry.configure(validate="focusout", validatecommand = lambda:self.csv_file_text())
-		self.csv_file_selector = WindowsButton(base, darkmode=self.dark_mode, image_filename=self.folder_icon_file, subx=6, suby=6, state='disabled', command = lambda:self.csv_file_opener())
+		self.csv_file_selector = WindowsButton(base, darkmode=self.user_settings.dark_mode_enabled, image_filename=self.folder_icon_file, subx=6, suby=6, state='disabled', command = lambda:self.csv_file_opener())
 		self.csv_entry.grid(row=2,column=1,columnspan=2,sticky='we',padx=(5, 30),pady=5)
 		self.csv_file_selector.grid(row=2,column=1,columnspan=2,sticky=E,padx=(0, 5),pady=5)
 
@@ -76,7 +82,7 @@ class MainWindow:
 		self.folder = StringVar(value="Output Folder")
 		self.folder_entry = Entry(state='disabled', textvariable=self.folder, relief=FLAT)
 		self.folder_entry.configure(validate="focusout", validatecommand = lambda:self.directory_selctor_text())
-		self.folder_selector = WindowsButton(base, darkmode=self.dark_mode, image_filename=self.folder_icon_file, subx=6, suby=6, state='disabled', command = lambda:self.directory_selector())
+		self.folder_selector = WindowsButton(base, darkmode=self.user_settings.dark_mode_enabled, image_filename=self.folder_icon_file, subx=6, suby=6, state='disabled', command = lambda:self.directory_selector())
 		self.folder_entry.grid(row=3,column=1,columnspan=2,sticky='we',padx=(5, 30),pady=5)
 		self.folder_selector.grid(row=3,column=1,columnspan=2,sticky=E,padx=(0, 5),pady=5)
 
@@ -90,10 +96,10 @@ class MainWindow:
 		self.filename_entry = Entry(self.file_output_info_group, state='disabled', textvariable=self.filename, relief=FLAT)
 
 		self.output_as_word = BooleanVar(value=True)
-		self.docx_checkbox = Checkbutton(self.file_output_info_group, state='disabled', relief=FLAT, text='Word', variable=self.output_as_word, onvalue=True, offvalue=False, command=self.check_runnable)
+		self.docx_checkbox = Checkbutton(self.file_output_info_group, state='disabled', relief=FLAT, offrelief=FLAT, overrelief=FLAT, text='Word', variable=self.output_as_word, onvalue=True, offvalue=False, command=self.check_runnable)
 		
 		self.output_as_pdf = BooleanVar(value=True)
-		self.pdf_checkbox = Checkbutton(self.file_output_info_group, state='disabled', relief=FLAT, text='PDF', variable=self.output_as_pdf, onvalue=True, offvalue=False, command=self.check_runnable)
+		self.pdf_checkbox = Checkbutton(self.file_output_info_group, state='disabled', relief=FLAT, offrelief=FLAT, overrelief=FLAT, text='PDF', variable=self.output_as_pdf, onvalue=True, offvalue=False, command=self.check_runnable)
 
 		self.filename_entry.grid(row=0,column=0,sticky='we',padx=(0, 30))
 		self.docx_checkbox.grid(row=0,column=1,sticky='we',padx=(5, 30))
@@ -146,18 +152,18 @@ class MainWindow:
 		self.edit_header_buttons = Frame(self.right_headers_group)
 		self.edit_header_buttons.grid(row=1,column=2, rowspan=2, padx=5,pady=5, sticky='nsew')
 
-		self.move_header_up_button = WindowsButton(self.edit_header_buttons, darkmode=self.dark_mode, image_filename=self.up_arrow_icon_file, subx=4, suby=4, command=lambda: self.move_up())
+		self.move_header_up_button = WindowsButton(self.edit_header_buttons, darkmode=self.user_settings.dark_mode_enabled, image_filename=self.up_arrow_icon_file, subx=4, suby=4, command=lambda: self.move_up())
 		self.move_header_up_button.grid(row=0,column=0, sticky='ew')
 
-		self.move_header_down_button = WindowsButton(self.edit_header_buttons, darkmode=self.dark_mode, image_filename=self.down_arrow_icon_file, subx=4, suby=4, command=lambda: self.move_down())
+		self.move_header_down_button = WindowsButton(self.edit_header_buttons, darkmode=self.user_settings.dark_mode_enabled, image_filename=self.down_arrow_icon_file, subx=4, suby=4, command=lambda: self.move_down())
 		self.move_header_down_button.grid(row=1,column=0, sticky='ew')
 
-		self.run = WindowsButton(base, darkmode=self.dark_mode, text ='Run', state='disabled', command = self.run_op)
+		self.run = WindowsButton(base, darkmode=self.user_settings.dark_mode_enabled, text ='Run', state='disabled', command = self.run_op)
 		self.run.grid(row=6,column=1, columnspan=2,padx=5,pady=5)
 		
-		self.set_mode()
-		self.base.withdraw()
-		Updater(self.base)
+		self.set_mode(first_run=True)
+		if self.user_settings.check_for_updates_on_start.get():
+			Updater(self.base, self.user_settings)
 
 	def template_file_opener(self):
 		template_file = filedialog.askopenfilename(filetypes=[("Word Document", ".docx")])
@@ -340,12 +346,17 @@ class MainWindow:
 		Convert(self.base, map, self.files, self.output_as_word.get(), self.output_as_word.get())
 
 	def on_closing(self):
+		self.user_settings.save_to_disk()
 		self.base.destroy()
 
-	def set_mode(self, after_og_draw=False):
+	def set_mode(self, first_run=False):
+		current_mode = self.user_settings.dark_mode_enabled
+		self.user_settings.update_dark_mode()
+		if current_mode == self.user_settings.dark_mode_enabled and not first_run:
+			return
 		def update_elements(base):
 			for child in base.winfo_children():
-				if isinstance(child, WindowsButton) and after_og_draw:
+				if isinstance(child, WindowsButton) and not first_run:
 					if child.image_filename:
 						child.change_mode(self.matching_icon_filenames[child.image_filename])
 					else:
@@ -363,15 +374,13 @@ class MainWindow:
 									selectcolor=self.select_bg)
 				elif isinstance(child, Listbox):
 					child.configure(bg=self.widget_bg, fg=self.fg)
-		if after_og_draw:
-			self.dark_mode = not self.dark_mode
 		self.set_colors()
 		self.base.configure(bg=self.window_bg)
 		update_elements(self.base)
 		self.base.update()
 	
 	def set_colors(self):
-		if self.dark_mode:
+		if self.user_settings.dark_mode_enabled:
 			self.window_bg = 'gray15'
 			self.widget_bg = 'gray35'
 			self.fg = 'white'
@@ -391,4 +400,3 @@ class MainWindow:
 			self.folder_icon_file = join(__location__, 'resources', 'folder_open', '2x', 'sharp_folder_open_black_48dp.png')
 			self.up_arrow_icon_file = join(__location__, 'resources', 'cheveron_up', '2x', 'sharp_chevron_up_black_48dp.png')
 			self.down_arrow_icon_file = join(__location__, 'resources', 'cheveron_down', '2x', 'sharp_chevron_down_black_48dp.png')
-
