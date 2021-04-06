@@ -1,4 +1,6 @@
 import csv
+import json
+import sys
 from os.path import abspath, join
 from tkinter import *
 from tkinter import filedialog
@@ -43,6 +45,7 @@ class MainWindow:
 		if self.user_settings.check_for_updates_on_start.get():
 			self.base.withdraw()
 		self.base.title("CSV 2 Paper")
+		self.base.iconbitmap(default=join(__location__, 'resources', 'icons', '16x16.ico'))
 		self.base.columnconfigure(1,weight=1)    #confiugures to stretch with a scaler of 1.
 		self.base.rowconfigure(5,weight=1)
 		self.base.columnconfigure(2,weight=1)
@@ -50,16 +53,26 @@ class MainWindow:
 		
 		# setup menubar
 		self.menu_bar = Menu(base)
-		self.options_menu = Menu(self.menu_bar, tearoff=0)
+		
+		self.file_menu = Menu(self.menu_bar, tearoff=0)
+		self.file_menu.add_command(label="Open Configuration Template", command=self.open_setup_template)
+		self.file_menu.add_command(label="Save Current Configuration", state="disabled", command=self.save_setup_template)
+
 		self.switch_theme = Menu(self.menu_bar, tearoff=0)
 		self.switch_theme.add_radiobutton(label="Use System Theme", value='system', variable=self.user_settings.default_theme, command=lambda:self.set_mode())
 		self.switch_theme.add_radiobutton(label="Dark", value="dark", variable=self.user_settings.default_theme, command=lambda:self.set_mode())
 		self.switch_theme.add_radiobutton(label="Light", value="light", variable=self.user_settings.default_theme, command=lambda:self.set_mode())
+		
+		self.options_menu = Menu(self.menu_bar, tearoff=0)
 		self.options_menu.add_checkbutton(label='Check for updates on start', variable=self.user_settings.check_for_updates_on_start, onvalue=True, offvalue=False)
+		self.options_menu.add_command(label="Check for updates...", command=self.update)
 		self.options_menu.add_cascade(label="Switch Theme", menu=self.switch_theme)
-		self.menu_bar.add_cascade(label="Options", menu=self.options_menu)
+
 		self.help_menu = Menu(self.menu_bar, tearoff=0)
 		self.help_menu.add_command(label="About...", command=self.about_popup)
+		
+		self.menu_bar.add_cascade(label="File", menu=self.file_menu)
+		self.menu_bar.add_cascade(label="Options", menu=self.options_menu)
 		self.menu_bar.add_cascade(label="Help", menu=self.help_menu)
 		self.base.config(menu=self.menu_bar)
 
@@ -104,7 +117,6 @@ class MainWindow:
 		self.filename_entry.grid(row=0,column=0,sticky='we',padx=(0, 30))
 		self.docx_checkbox.grid(row=0,column=1,sticky='we',padx=(5, 30))
 		self.pdf_checkbox.grid(row=0,column=3,sticky='we',padx=(5, 30))
-
 
 		self.left_merge_fields_group = Frame(base, bg=self.window_bg)
 		self.left_merge_fields_group.grid(row=5,column=1, padx=5,pady=5, sticky='nsew')
@@ -158,12 +170,122 @@ class MainWindow:
 		self.move_header_down_button = WindowsButton(self.edit_header_buttons, darkmode=self.user_settings.dark_mode_enabled, image_filename=self.down_arrow_icon_file, subx=4, suby=4, command=lambda: self.move_down())
 		self.move_header_down_button.grid(row=1,column=0, sticky='ew')
 
+		self.break_type_options = ['Page Break', 'Column Break', 'Text Wrapping Break', 'Continuous Section', 'Even Page Section', 'Next Column Section', 'Next Page Section', 'Odd Page Section']
+		self.break_type_options_map = {
+			'Page Break': 'page_break',
+			'Column Break': 'column_break',
+			'Text Wrapping Break': 'textWrapping_break',
+			'Continuous Section': 'continuous_section',
+			'Even Page Section': 'evenPage_section',
+			'Next Column Section': 'nextColumn_section',
+			'Next Page Section': 'nextPage_section',
+			'Odd Page Section': 'oddPage_section'
+		}
+		self.break_type = StringVar()
+		self.break_type.set(self.break_type_options[0])
+		'''
+		self.break_type_select = OptionMenu(base, self.break_type, *self.break_type_options)
+		self.break_type_select["menu"].config(relief=FLAT)
+		self.break_type_select["menu"].config(activeborderwidth=0)
+		self.break_type_select["menu"].config(bd=0)
+		self.break_type_select.grid(row=6,column=1, padx=5, pady=5)
+		'''
+		
+		self.test_run = WindowsButton(base, darkmode=self.user_settings.dark_mode_enabled, text ='Test Run', state='disabled', command = self.run_limited_op)
+		self.test_run.grid(row=6,column=1, padx=5, pady=5)
+
 		self.run = WindowsButton(base, darkmode=self.user_settings.dark_mode_enabled, text ='Run', state='disabled', command = self.run_op)
-		self.run.grid(row=6,column=1, columnspan=2,padx=5,pady=5)
+		self.run.grid(row=6,column=2, padx=5, pady=5)
 		
 		self.set_mode(first_run=True)
 		if self.user_settings.check_for_updates_on_start.get():
-			Updater(self.base, self.user_settings)
+			self.update()
+		if len(sys.argv) > 1:
+			template_file = sys.argv[1]
+			self.open_setup_template(template_file)
+
+	def open_setup_template(self, template_file=None):
+		if not template_file: 
+			template_file = filedialog.askopenfilename(filetypes=[("CSV 2 Paper Configuration File", ".c2p")])
+
+		with open(template_file, 'r') as saved_setup:
+			saved_setup_data = json.load(saved_setup)
+		
+		self.file_menu.entryconfig("Save Current Configuration", state="normal")
+		self.csv_entry.configure(state='normal')
+		self.csv_file_selector.configure(state='normal')
+		self.folder_entry.configure(state='normal')
+		self.folder_selector.configure(state='normal')
+		self.filename_entry.configure(state='normal')
+		self.pdf_checkbox.configure(state='normal')
+		self.docx_checkbox.configure(state='normal')
+		self.test_run.configure(state='normal')
+		self.run.configure(state='normal')
+
+		self.files.template = saved_setup_data["template_file"]
+		self.template_entry.delete(0, END)
+		self.template_entry.insert(0, self.files.template)
+
+		self.files.csv_file = saved_setup_data["csv_file"]
+		self.csv_entry.delete(0, END)
+		self.csv_entry.insert(0, self.files.csv_file)
+
+		self.files.folder = saved_setup_data["folder"]
+		self.folder_entry.delete(0, END)
+		self.folder_entry.insert(0, self.files.folder)
+
+		self.files.filename = saved_setup_data["filename"]
+		self.filename_entry.delete(0, END)
+		self.filename_entry.insert(0, self.files.filename)
+		self.output_as_pdf.set(saved_setup_data["output_as_pdf"])
+		self.output_as_word.set(saved_setup_data["output_as_word"])
+
+		self.merge_fields_listbox.delete(0,END)
+		self.headers_listbox.delete(0,END)
+
+		with MailMergeTracking(self.files.template) as document:
+			fields = document.get_merge_fields()
+			fields = sorted(fields)
+		
+		with open(self.files.csv_file, encoding='utf8', newline='') as csv_file:
+			csv_list = csv.reader(csv_file)
+			headers = next(csv_list)
+			headers = sorted(headers)
+		
+		data_valid = True
+		if not fields == sorted(saved_setup_data["fields"]):
+			data_valid = False
+		saved_headers = sorted(list(saved_setup_data["matched_fields"].values()))
+		if not all(elem in headers  for elem in saved_headers):
+			data_valid = False
+	
+		if data_valid:
+			for template_value, csv_value in saved_setup_data["matched_fields"].items():
+				self.merge_fields_listbox.insert(END, template_value)
+				self.headers_listbox.insert(END, csv_value)
+			try:
+				for csv_value in saved_setup_data["headers"][len(saved_setup_data["fields"]):]:
+					self.headers_listbox.insert(END, csv_value)
+			except IndexError:
+				pass
+
+	def save_setup_template(self):
+		save_data = {}
+		save_data["template_file"] = self.files.template
+		save_data["csv_file"] = self.files.csv_file
+		save_data["folder"] = self.files.folder
+		save_data["filename"] = self.files.filename
+		save_data["output_as_pdf"] = self.output_as_pdf.get()
+		save_data["output_as_word"] = self.output_as_word.get()
+		save_data["matched_fields"] = self.map_fields()
+		save_data["fields"] = self.merge_fields_listbox.get(0,END)
+		save_data["headers"] = self.headers_listbox.get(0,END)
+
+		save_as_filename = filedialog.asksaveasfilename(defaultextension=".c2p", filetypes=[("CSV 2 Paper Configuration File", ".c2p")])
+		with open(save_as_filename, "w", encoding="utf-8") as save_file:
+			save_file.seek(0)
+			save_file.write(json.dumps(save_data))
+			save_file.close()
 
 	def template_file_opener(self):
 		template_file = filedialog.askopenfilename(filetypes=[("Word Document", ".docx")])
@@ -234,9 +356,11 @@ class MainWindow:
 		self.files.folder = folder_selected
 		self.folder_entry.delete(0,END)
 		self.folder_entry.insert(0,folder_selected)
-
+		
+		self.file_menu.entryconfig("Save Current Configuration", state="normal")
 		self.filename_entry.configure(state='normal')
 		self.run.configure(state='normal')
+		self.test_run.configure(state='normal')
 		self.pdf_checkbox.configure(state='normal')
 		self.docx_checkbox.configure(state='normal')
 
@@ -310,6 +434,9 @@ class MainWindow:
 		if self.output_as_word.get() or self.output_as_pdf.get():
 			self.run.configure(state='normal')
 
+	def update(self):
+		Updater(self.base, self.user_settings)
+
 	def about_popup(self):
 		about_win = Toplevel(takefocus=True)
 		about_win.focus_force()
@@ -338,12 +465,15 @@ class MainWindow:
 			map[fields[index]] = headers[index]
 		return map
 
-	def run_op(self):
+	def run_limited_op(self):
+		self.run_op(4)
+
+	def run_op(self, limit=None):
 		map = self.map_fields()
 		self.files.template = self.template_entry.get()
 		self.files.csv_file = self.csv_entry.get()
 		self.files.folder = self.folder_entry.get()
-		Convert(self.base, map, self.files, self.output_as_word.get(), self.output_as_word.get())
+		Convert(self.base, map, self.files, self.output_as_word.get(), self.output_as_word.get(), limit)
 
 	def on_closing(self):
 		self.user_settings.save_to_disk()

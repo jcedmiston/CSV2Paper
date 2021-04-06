@@ -9,7 +9,7 @@ class MailMergeTracking(MailMerge):
     def __init__(self, file, remove_empty_tables=False):
         super().__init__(file, remove_empty_tables)
     
-    def merge_templates(self, replacements, separator, queue):
+    def merge_templates(self, replacements, separator, queue, stopped):
         """
         Duplicate template. Creates a copy of the template, does a merge, and separates them by a new paragraph, a new break or a new section break.
         separator must be :
@@ -108,3 +108,5 @@ class MailMergeTracking(MailMerge):
                 
                 completed_count += 1
                 queue.put((completed_count, "Merging into template...", "determinate"))
+                if stopped.is_set():
+                    return

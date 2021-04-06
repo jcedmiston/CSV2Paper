@@ -16,7 +16,7 @@ from files import __location__
 from mailmerge_tracking import MailMergeTracking
 
 class Convert:
-	def __init__(self, base, map, files, output_as_word, output_as_pdf):
+	def __init__(self, base, map, files, output_as_word, output_as_pdf, limit=None):
 		self.map = map
 		self.files = files
 		self.output_as_word = output_as_word
@@ -24,7 +24,7 @@ class Convert:
 
 		self.run_popup = Toplevel(takefocus=True)
 		self.run_popup.focus_force()
-		self.run_popup.grab_set()
+		#self.run_popup.grab_set()
 		self.run_popup.protocol("WM_DELETE_WINDOW", self.on_closing)
 
 		self.run_popup.wm_title("Converting...")
@@ -40,8 +40,11 @@ class Convert:
 		s.configure('blue.Horizontal.TProgressbar', troughcolor  = 'gray35', troughrelief = 'flat', background = '#2f92ff')
 		self.progress = ttk.Progressbar(self.run_popup, style = 'blue.Horizontal.TProgressbar', orient="horizontal",length=250, mode="determinate")
 		self.progress_indeterminate = ttk.Progressbar(self.run_popup, style = 'blue.Horizontal.TProgressbar', orient="horizontal",length=250, mode="indeterminate")
-		with open(self.files.csv_file, encoding='utf8', newline='') as csv_file:
-			self.num_records = sum(1 for row in csv_file) - 1
+		if limit is None:
+			with open(self.files.csv_file, encoding='utf8', newline='') as csv_file:
+				self.num_records = sum(1 for row in csv_file) - 1
+		else:
+			self.num_records = limit
 		self.progress["maximum"] = self.num_records
 		self.progress_indeterminate["maximum"] = 100
 		
@@ -59,7 +62,8 @@ class Convert:
 		self.run_popup.wm_geometry(geom)
 
 		self.queue = queue.Queue()
-		self.thread = threading.Thread(target=self.write_out)
+		self.cancel_convert = threading.Event()
+		self.thread = threading.Thread(target=self.write_out, args=(self.cancel_convert,limit))
 		self.thread.start()
 		self.run_popup.after(1, self.refresh_data)
 		
@@ -95,29 +99,39 @@ class Convert:
 		#  timer to refresh the gui with data from the asyncio thread
 		self.run_popup.after(1, self.refresh_data)
 
-	def write_out(self):
+	def write_out(self, stopped, limit):
 		with open(self.files.csv_file, encoding='utf8', newline='') as csv_file:
 			csv_dict = csv.DictReader(csv_file)
-		
+				
 			document = MailMergeTracking(self.files.template)
 			merge_data = []
 			progress = 0
 			for row in csv_dict:
-				merge_data.append({field:row[self.map[field]] for field in document.get_merge_fields()})
-				progress += 1
-				self.queue.put((progress, "Mapping data to fields...", "determinate"))
-		self.queue.put((self.num_records, "Mapping data to fields...", "determinate"))
+				if limit is not None:
+					if progress == limit:
+						break
+				if not stopped.is_set(): 
+					merge_data.append({field:row[self.map[field]] for field in document.get_merge_fields()})
+					progress += 1
+					self.queue.put((progress, "Mapping data to fields...", "determinate"))
+				else: return
+
+		if not stopped.is_set():
+			self.queue.put((self.num_records, "Mapping data to fields...", "determinate"))
+		else: return
 
 		self.queue.put((0, "Merging into template...", "determinate"))
-		document.merge_templates(merge_data, separator="page_break", queue=self.queue)
+		document.merge_templates(merge_data, separator="page_break", queue=self.queue, stopped=stopped)
 		self.queue.put((self.num_records, "Merging into template...", "determinate"))
 
 		docx_filename = str(self.files.filename)+".docx"
 		pdf_filename = str(self.files.filename)+".pdf"
 
-		self.queue.put((None, "Saving...", "indeterminate"))
-		if not isdir(self.files.folder):
-			mkdir(self.files.folder)
+		if not stopped.is_set():
+			self.queue.put((None, "Saving...", "indeterminate"))
+			if not isdir(self.files.folder):
+				mkdir(self.files.folder)
+		else: return
 
 		docx_filepath = normpath(abspath(join(self.files.folder, docx_filename)))
 		pdf_filepath = normpath(abspath(join(self.files.folder, pdf_filename)))
@@ -162,4 +176,7 @@ class Convert:
 	
 	def on_closing(self):
 		if messagebox.askyesno("CSV 2 Paper", "Are you sure you want to cancel?"):
+			self.cancel_convert.set()
+			if self.thread.is_alive():
+				self.thread.join()
 			self.run_popup.destroy()
