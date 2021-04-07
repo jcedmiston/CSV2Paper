@@ -1,2 +1,9 @@
-
 .DS_Store
+/.vscode
+/dist
+/venv
+/installers
+/CSV2Paper
+/freeze_setup_files
+/__pycache__
+pip-licenses cmd.txt
