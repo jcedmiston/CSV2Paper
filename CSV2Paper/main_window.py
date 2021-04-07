@@ -45,7 +45,7 @@ class MainWindow:
 		if self.user_settings.check_for_updates_on_start.get():
 			self.base.withdraw()
 		self.base.title("CSV 2 Paper")
-		self.base.iconbitmap(default=join(__location__, 'resources', 'icons', '16x16.ico'))
+		self.base.iconbitmap(default=join(__location__, 'resources', 'icons', '32x32.ico'))
 		self.base.columnconfigure(1,weight=1)    #confiugures to stretch with a scaler of 1.
 		self.base.rowconfigure(5,weight=1)
 		self.base.columnconfigure(2,weight=1)
@@ -473,7 +473,7 @@ class MainWindow:
 		self.files.template = self.template_entry.get()
 		self.files.csv_file = self.csv_entry.get()
 		self.files.folder = self.folder_entry.get()
-		Convert(self.base, map, self.files, self.output_as_word.get(), self.output_as_word.get(), limit)
+		Convert(self.base, map, self.files, self.output_as_word.get(), self.output_as_word.get(), self.user_settings, limit)
 
 	def on_closing(self):
 		self.user_settings.save_to_disk()

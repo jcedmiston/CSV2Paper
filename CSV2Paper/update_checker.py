@@ -19,6 +19,17 @@ class Updater:
         self.update_popup = Toplevel(base, takefocus=True)
         self.update_popup.grab_set()
         self.headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36'}
+        
+        self.window_bg = None
+        self.widget_bg = None
+        self.fg = None
+        self.insert_bg = None
+        self.disabled_bg = 'gray80'
+        self.select_bg = None
+        self.folder_icon_file = None
+        self.up_arrow_icon_file = None
+        self.down_arrow_icon_file = None
+        self.set_colors()
 
         self.update_popup.update_idletasks()
         x = base.winfo_rootx()
@@ -34,7 +45,7 @@ class Updater:
         self.update_popup.resizable(False, False)
         self.update_popup.rowconfigure(0,weight=1)
         self.update_popup.columnconfigure(0,weight=1)
-        self.update_popup.configure(bg='gray15')
+        self.update_popup.configure(bg=self.window_bg)
 
         #self.title_bar = Frame(self.update_popup, bg="gray20")
         #self.close_button = WindowsTitleBarButton(self.title_bar, width=45, height=28, command=self.on_closing)
@@ -59,17 +70,17 @@ class Updater:
             self.current_version = json.load(current_version_source)
         
         self.status_label_text = StringVar(value='Checking for updates...')
-        self.status_label = Label(self.update_popup, bg='gray15', fg='white', bd=0, textvariable=self.status_label_text, justify=LEFT)
+        self.status_label = Label(self.update_popup, bg=self.window_bg, fg=self.fg, bd=0, textvariable=self.status_label_text, justify=LEFT)
         self.status_label.grid(row=1, column=0, columnspan=2, pady=(5,0), padx=5, sticky='nswe')
-        self.current_version_num_label = Label(self.update_popup, bg='gray15', fg='white', bd=0, text='Current Version: '+self.current_version['exec_version'], justify=CENTER)
+        self.current_version_num_label = Label(self.update_popup, bg=self.window_bg, fg=self.fg, bd=0, text='Current Version: '+self.current_version['exec_version'], justify=CENTER)
         self.new_version_num = StringVar()
-        self.new_version_num_label = Label(self.update_popup, bg='gray15', fg='white', bd=0, textvariable=self.new_version_num, justify=CENTER)
+        self.new_version_num_label = Label(self.update_popup, bg=self.window_bg, fg=self.fg, bd=0, textvariable=self.new_version_num, justify=CENTER)
 
         self.install_now = BooleanVar()
         
-        self.updates_checkbox = Checkbutton(self.update_popup, relief=FLAT, offrelief=FLAT, overrelief=FLAT, selectcolor='gray30',  activeforeground='white', bg='gray15', activebackground='gray15', fg='white', text='Check for updates on start', variable=self.user_settings.check_for_updates_on_start, onvalue=True, offvalue=False)
-        self.install_now_button = WindowsButton(self.update_popup, darkmode=True, highlight=True, text="Install Now", command=lambda: self.install_now.set(True))
-        self.maybe_later_button = WindowsButton(self.update_popup, darkmode=True, text="Maybe Later", command=lambda: self.install_now.set(False))
+        self.updates_checkbox = Checkbutton(self.update_popup, relief=FLAT, offrelief=FLAT, overrelief=FLAT, bg=self.window_bg, fg=self.fg, activebackground=self.window_bg, activeforeground=self.fg, selectcolor=self.select_bg, text='Check for updates on start', variable=self.user_settings.check_for_updates_on_start, onvalue=True, offvalue=False)
+        self.install_now_button = WindowsButton(self.update_popup, darkmode=user_settings.dark_mode_enabled, highlight=True, text="Install Now", command=lambda: self.install_now.set(True))
+        self.maybe_later_button = WindowsButton(self.update_popup, darkmode=user_settings.dark_mode_enabled, text="Maybe Later", command=lambda: self.install_now.set(False))
 
         self.update_available = False
         self.update_installer_url = None

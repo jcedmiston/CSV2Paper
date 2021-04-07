@@ -12,15 +12,28 @@ from tkinter import messagebox, ttk
 
 from docx2pdf import convert
 from drag_drop_listbox import DragDropListbox
+
 from files import __location__
 from mailmerge_tracking import MailMergeTracking
 
 class Convert:
-	def __init__(self, base, map, files, output_as_word, output_as_pdf, limit=None):
+	def __init__(self, base, map, files, output_as_word, output_as_pdf, user_settings, limit=None):
 		self.map = map
 		self.files = files
 		self.output_as_word = output_as_word
 		self.output_as_pdf = output_as_pdf
+		self.user_settings = user_settings
+
+		self.window_bg = None
+		self.widget_bg = None
+		self.fg = None
+		self.insert_bg = None
+		self.disabled_bg = 'gray80'
+		self.select_bg = None
+		self.folder_icon_file = None
+		self.up_arrow_icon_file = None
+		self.down_arrow_icon_file = None
+		self.set_colors()
 
 		self.run_popup = Toplevel(takefocus=True)
 		self.run_popup.focus_force()
@@ -30,9 +43,10 @@ class Convert:
 		self.run_popup.wm_title("Converting...")
 		self.run_popup.resizable(0, 0)
 		self.run_popup.columnconfigure(0,weight=1)
+		self.run_popup.configure(bg=self.window_bg)
 
 		self.running_description = StringVar(value="Mapping data to fields...")
-		self.running_description_label = Label(self.run_popup, textvariable=self.running_description, justify=LEFT)
+		self.running_description_label = Label(self.run_popup, bg=self.window_bg, fg=self.fg, textvariable=self.running_description, justify=LEFT)
 		self.running_description_label.grid(row=1, column=0, pady=(10,0), padx=5, sticky=W)
 
 		s = ttk.Style()
@@ -42,14 +56,14 @@ class Convert:
 		self.progress_indeterminate = ttk.Progressbar(self.run_popup, style = 'blue.Horizontal.TProgressbar', orient="horizontal",length=250, mode="indeterminate")
 		if limit is None:
 			with open(self.files.csv_file, encoding='utf8', newline='') as csv_file:
-				self.num_records = sum(1 for row in csv_file) - 1
+				self.num_records = sum(1 for row in csv.reader(csv_file)) - 1
 		else:
 			self.num_records = limit
 		self.progress["maximum"] = self.num_records
 		self.progress_indeterminate["maximum"] = 100
 		
 		self.running_count = StringVar(value="0 of "+str(self.num_records))
-		self.running_count_label = Label(self.run_popup, textvariable=self.running_count, justify=LEFT)
+		self.running_count_label = Label(self.run_popup, bg=self.window_bg, fg=self.fg, textvariable=self.running_count, justify=LEFT)
 		self.running_count_label.grid(row=1, column=1, pady=(10,0), padx=5, sticky=E)
 		self.progress.grid(row=2, column=0, columnspan=2, pady=(0,20), padx=5, sticky='ew')
 		
@@ -180,3 +194,25 @@ class Convert:
 			if self.thread.is_alive():
 				self.thread.join()
 			self.run_popup.destroy()
+
+	def set_colors(self):
+		if self.user_settings.dark_mode_enabled:
+			self.window_bg = 'gray15'
+			self.widget_bg = 'gray35'
+			self.fg = 'white'
+			self.insert_bg = 'white'
+			self.disabled_bg = 'gray20'
+			self.select_bg = 'gray30'
+			self.folder_icon_file = join(__location__, 'resources', 'folder_open', '2x', 'sharp_folder_open_white_48dp.png')
+			self.up_arrow_icon_file = join(__location__, 'resources', 'cheveron_up', '2x', 'sharp_chevron_up_white_48dp.png')
+			self.down_arrow_icon_file = join(__location__, 'resources', 'cheveron_down', '2x', 'sharp_chevron_down_white_48dp.png')
+		else:
+			self.window_bg = 'SystemButtonFace'
+			self.widget_bg = 'SystemWindow'
+			self.fg = 'SystemWindowText'
+			self.insert_bg = 'SystemWindowText'
+			self.disabled_bg = 'gray80'
+			self.select_bg = 'SystemWindow'
+			self.folder_icon_file = join(__location__, 'resources', 'folder_open', '2x', 'sharp_folder_open_black_48dp.png')
+			self.up_arrow_icon_file = join(__location__, 'resources', 'cheveron_up', '2x', 'sharp_chevron_up_black_48dp.png')
+			self.down_arrow_icon_file = join(__location__, 'resources', 'cheveron_down', '2x', 'sharp_chevron_down_black_48dp.png')
