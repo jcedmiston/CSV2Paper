@@ -1,9 +1,9 @@
 import csv
 import json
 import sys
-from os.path import abspath, join
+from os.path import abspath, isfile, join, basename
 from tkinter import *
-from tkinter import filedialog
+from tkinter import filedialog, messagebox
 
 from convert import Convert
 from files import FilePaths, __location__
@@ -199,7 +199,7 @@ class MainWindow:
 		
 		self.set_mode(first_run=True)
 		if self.user_settings.check_for_updates_on_start.get():
-			self.update()
+			self.update(True)
 		if len(sys.argv) > 1:
 			template_file = sys.argv[1]
 			self.open_setup_template(template_file)
@@ -221,14 +221,16 @@ class MainWindow:
 		self.docx_checkbox.configure(state='normal')
 		self.test_run.configure(state='normal')
 		self.run.configure(state='normal')
+		
+		if self.check_for_file(saved_setup_data["template_file"], self.template_file_opener) is not None:
+			self.files.template = saved_setup_data["template_file"]
+			self.template_entry.delete(0, END)
+			self.template_entry.insert(0, self.files.template)
 
-		self.files.template = saved_setup_data["template_file"]
-		self.template_entry.delete(0, END)
-		self.template_entry.insert(0, self.files.template)
-
-		self.files.csv_file = saved_setup_data["csv_file"]
-		self.csv_entry.delete(0, END)
-		self.csv_entry.insert(0, self.files.csv_file)
+		if self.check_for_file(saved_setup_data["csv_file"], self.csv_file_opener) is not None:
+			self.files.csv_file = saved_setup_data["csv_file"]
+			self.csv_entry.delete(0, END)
+			self.csv_entry.insert(0, self.files.csv_file)
 
 		self.files.folder = saved_setup_data["folder"]
 		self.folder_entry.delete(0, END)
@@ -256,7 +258,7 @@ class MainWindow:
 		if not fields == sorted(saved_setup_data["fields"]):
 			data_valid = False
 		saved_headers = sorted(list(saved_setup_data["matched_fields"].values()))
-		if not all(elem in headers  for elem in saved_headers):
+		if not all(elem in headers for elem in saved_headers):
 			data_valid = False
 	
 		if data_valid:
@@ -268,6 +270,14 @@ class MainWindow:
 					self.headers_listbox.insert(END, csv_value)
 			except IndexError:
 				pass
+		
+	
+	def check_for_file(self, file, callback):
+		if isfile(file):
+			return file
+		if messagebox.askyesno("CSV 2 Paper", 'The file "'+ basename(file) +'" no longer exists or has been moved. Would you like to relocate it?'):
+			callback()
+			return None
 
 	def save_setup_template(self):
 		save_data = {}
@@ -312,7 +322,7 @@ class MainWindow:
 				self.merge_fields_listbox.insert(END, field)
 
 	def csv_file_opener(self):
-		csv_file = filedialog.askopenfilename(filetypes=[("CSV", ".csv")])
+		csv_file = filedialog.askopenfilename(filetypes=[("Comma-Seperated Values (CSV)", ".csv")])
 		self.files.csv_file = csv_file
 		self.csv_entry.delete(0, END)
 		self.csv_entry.insert(0, csv_file)
@@ -407,26 +417,26 @@ class MainWindow:
 			pass
 
 	def move_down(self):
-		try:
-			idxs = self.headers_listbox.curselection()
-			if not idxs:
-				return
-			for pos in idxs:
-				# Are we at the bottom of the list?
-				if pos == self.headers_listbox.size()-1:
-					self.merge_fields_listbox.selection_clear(0,END)
-					self.merge_fields_listbox.selection_set(pos)
-					self.merge_fields_listbox.see(pos)
-					continue
-				text=self.headers_listbox.get(pos)
-				self.headers_listbox.delete(pos)
-				self.headers_listbox.insert(pos+1, text)
-				self.headers_listbox.selection_set(pos+1)
-				self.headers_listbox.activate(pos+1)
+		#try:
+		idxs = self.headers_listbox.curselection()
+		if not idxs:
+			return
+		for pos in idxs:
+			# Are we at the bottom of the list?
+			if pos == self.headers_listbox.size()-1:
 				self.merge_fields_listbox.selection_clear(0,END)
-				self.merge_fields_listbox.selection_set(pos+1)
-		except:
-			pass
+				self.merge_fields_listbox.selection_set(pos)
+				self.merge_fields_listbox.see(pos)
+				continue
+			text=self.headers_listbox.get(pos)
+			self.headers_listbox.delete(pos)
+			self.headers_listbox.insert(pos+1, text)
+			self.headers_listbox.selection_set(pos+1)
+			self.headers_listbox.activate(pos+1)
+			self.merge_fields_listbox.selection_clear(0,END)
+			self.merge_fields_listbox.selection_set(pos+1)
+		#except:
+		#	pass
 	
 	def check_runnable(self):
 		if not self.output_as_word.get() and not self.output_as_pdf.get():
@@ -434,8 +444,8 @@ class MainWindow:
 		if self.output_as_word.get() or self.output_as_pdf.get():
 			self.run.configure(state='normal')
 
-	def update(self):
-		Updater(self.base, self.user_settings)
+	def update(self, on_start=False):
+		Updater(self.base, self.user_settings, on_start=on_start)
 
 	def about_popup(self):
 		about_win = Toplevel(takefocus=True)

@@ -150,43 +150,47 @@ class Convert:
 		docx_filepath = normpath(abspath(join(self.files.folder, docx_filename)))
 		pdf_filepath = normpath(abspath(join(self.files.folder, pdf_filename)))
 
-		if not self.output_as_word:
-			temp_docx = NamedTemporaryFile(delete=False, suffix=".docx")
-			temp_docx.close()
-			document.write(temp_docx.name)
-			document.close()
-			try:
-				convert(temp_docx.name, pdf_filepath)
-			except NotImplementedError:
-				pass
-			unlink(temp_docx.name)
-		if not self.output_as_pdf:
-			document.write(docx_filepath)
-			document.close()
-		if self.output_as_word and self.output_as_pdf:
-			document.write(docx_filepath)
-			document.close()
-			try:
-				convert(docx_filepath, pdf_filepath) 
-			except NotImplementedError:
-				pass
+		if not stopped.is_set():
+			if not self.output_as_word:
+				temp_docx = NamedTemporaryFile(delete=False, suffix=".docx")
+				temp_docx.close()
+				document.write(temp_docx.name)
+				document.close()
+				try:
+					convert(temp_docx.name, pdf_filepath)
+				except NotImplementedError:
+					pass
+				unlink(temp_docx.name)
+			if not self.output_as_pdf:
+				document.write(docx_filepath)
+				document.close()
+			if self.output_as_word and self.output_as_pdf:
+				document.write(docx_filepath)
+				document.close()
+				try:
+					convert(docx_filepath, pdf_filepath) 
+				except NotImplementedError:
+					pass
+		else: return
 		
-		self.queue.put((None, "Opening...", "holding"))
-		if platform.system() == 'Darwin':       # macOS
-			if self.output_as_word:
-				subprocess.call(('open', docx_filepath))
-			if self.output_as_pdf:
-				subprocess.call(('open', pdf_filepath))
-		elif platform.system() == 'Windows':    # Windows
-			if self.output_as_word:
-				os.startfile(docx_filepath)
-			if self.output_as_pdf:
-				os.startfile(pdf_filepath)
-		else:                                   # linux variants
-			if self.output_as_word:
-				subprocess.call(('xdg-open', docx_filepath))
-		
-		self.queue.put((None, "Opening...", "finished"))
+		if not stopped.is_set():
+			self.queue.put((None, "Opening...", "holding"))
+			if platform.system() == 'Darwin':       # macOS
+				if self.output_as_word:
+					subprocess.call(('open', docx_filepath))
+				if self.output_as_pdf:
+					subprocess.call(('open', pdf_filepath))
+			elif platform.system() == 'Windows':    # Windows
+				if self.output_as_word:
+					os.startfile(docx_filepath)
+				if self.output_as_pdf:
+					os.startfile(pdf_filepath)
+			else:                                   # linux variants
+				if self.output_as_word:
+					subprocess.call(('xdg-open', docx_filepath))
+			
+			self.queue.put((None, "Opening...", "finished"))
+		else: return
 	
 	def on_closing(self):
 		if messagebox.askyesno("CSV 2 Paper", "Are you sure you want to cancel?"):
