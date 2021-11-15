@@ -155,7 +155,8 @@ class Updater:
         installer_download = requests.get(url, headers=self.headers)
         try:
             assert installer_download.status_code == 200
-        except AssertionError: return
+        except AssertionError: 
+            return
         if not stopped.is_set(): 
             installer = installer_download.content
         else: return
