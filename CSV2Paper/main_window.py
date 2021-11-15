@@ -59,9 +59,9 @@ class MainWindow:
 		self.file_menu.add_command(label="Save Current Configuration", state="disabled", command=self.save_setup_template)
 
 		self.switch_theme = Menu(self.menu_bar, tearoff=0)
-		self.switch_theme.add_radiobutton(label="Use System Theme", value='system', variable=self.user_settings.default_theme, command=lambda:self.set_mode())
-		self.switch_theme.add_radiobutton(label="Dark", value="dark", variable=self.user_settings.default_theme, command=lambda:self.set_mode())
-		self.switch_theme.add_radiobutton(label="Light", value="light", variable=self.user_settings.default_theme, command=lambda:self.set_mode())
+		self.switch_theme.add_radiobutton(label="Use System Theme", value='system', variable=self.user_settings.default_theme, command=self.set_mode)
+		self.switch_theme.add_radiobutton(label="Dark", value="dark", variable=self.user_settings.default_theme, command=self.set_mode)
+		self.switch_theme.add_radiobutton(label="Light", value="light", variable=self.user_settings.default_theme, command=self.set_mode)
 		
 		self.options_menu = Menu(self.menu_bar, tearoff=0)
 		self.options_menu.add_checkbutton(label='Check for updates on start', variable=self.user_settings.check_for_updates_on_start, onvalue=True, offvalue=False)
@@ -78,24 +78,24 @@ class MainWindow:
 
 		self.template = StringVar(value="Word Template")
 		self.template_entry = Entry(textvariable=self.template, relief=FLAT)
-		self.template_entry.configure(validate="focusout", validatecommand = lambda:self.template_file_text())
-		self.template_file_selector = WindowsButton(base, darkmode=self.user_settings.dark_mode_enabled, image_filename=self.folder_icon_file, subx=6, suby=6, command = lambda:self.template_file_opener())
+		self.template_entry.configure(validate="focusout", validatecommand=self.template_file_text)
+		self.template_file_selector = WindowsButton(base, darkmode=self.user_settings.dark_mode_enabled, image_filename=self.folder_icon_file, subx=6, suby=6, command=self.template_file_opener)
 		self.template_entry.grid(row=1,column=1,columnspan=2,sticky='we',padx=(5, 30),pady=(0,0))
 		self.template_file_selector.grid(row=1,column=1,columnspan=2,sticky=E,padx=(0, 5),pady=5)
 
 
 		self.csv = StringVar(value="CSV")
 		self.csv_entry = Entry(state='disabled', textvariable=self.csv, relief=FLAT)
-		self.csv_entry.configure(validate="focusout", validatecommand = lambda:self.csv_file_text())
-		self.csv_file_selector = WindowsButton(base, darkmode=self.user_settings.dark_mode_enabled, image_filename=self.folder_icon_file, subx=6, suby=6, state='disabled', command = lambda:self.csv_file_opener())
+		self.csv_entry.configure(validate="focusout", validatecommand=self.csv_file_text)
+		self.csv_file_selector = WindowsButton(base, darkmode=self.user_settings.dark_mode_enabled, image_filename=self.folder_icon_file, subx=6, suby=6, state='disabled', command=self.csv_file_opener)
 		self.csv_entry.grid(row=2,column=1,columnspan=2,sticky='we',padx=(5, 30),pady=5)
 		self.csv_file_selector.grid(row=2,column=1,columnspan=2,sticky=E,padx=(0, 5),pady=5)
 
 
 		self.folder = StringVar(value="Output Folder")
 		self.folder_entry = Entry(state='disabled', textvariable=self.folder, relief=FLAT)
-		self.folder_entry.configure(validate="focusout", validatecommand = lambda:self.directory_selctor_text())
-		self.folder_selector = WindowsButton(base, darkmode=self.user_settings.dark_mode_enabled, image_filename=self.folder_icon_file, subx=6, suby=6, state='disabled', command = lambda:self.directory_selector())
+		self.folder_entry.configure(validate="focusout", validatecommand=self.directory_selctor_text)
+		self.folder_selector = WindowsButton(base, darkmode=self.user_settings.dark_mode_enabled, image_filename=self.folder_icon_file, subx=6, suby=6, state='disabled', command=self.directory_selector)
 		self.folder_entry.grid(row=3,column=1,columnspan=2,sticky='we',padx=(5, 30),pady=5)
 		self.folder_selector.grid(row=3,column=1,columnspan=2,sticky=E,padx=(0, 5),pady=5)
 
@@ -164,10 +164,10 @@ class MainWindow:
 		self.edit_header_buttons = Frame(self.right_headers_group)
 		self.edit_header_buttons.grid(row=1,column=2, rowspan=2, padx=5,pady=5, sticky='nsew')
 
-		self.move_header_up_button = WindowsButton(self.edit_header_buttons, darkmode=self.user_settings.dark_mode_enabled, image_filename=self.up_arrow_icon_file, subx=4, suby=4, command=lambda: self.move_up())
+		self.move_header_up_button = WindowsButton(self.edit_header_buttons, darkmode=self.user_settings.dark_mode_enabled, image_filename=self.up_arrow_icon_file, subx=4, suby=4, command=self.move_up)
 		self.move_header_up_button.grid(row=0,column=0, sticky='ew')
 
-		self.move_header_down_button = WindowsButton(self.edit_header_buttons, darkmode=self.user_settings.dark_mode_enabled, image_filename=self.down_arrow_icon_file, subx=4, suby=4, command=lambda: self.move_down())
+		self.move_header_down_button = WindowsButton(self.edit_header_buttons, darkmode=self.user_settings.dark_mode_enabled, image_filename=self.down_arrow_icon_file, subx=4, suby=4, command=self.move_down)
 		self.move_header_down_button.grid(row=1,column=0, sticky='ew')
 
 		self.break_type_options = ['Page Break', 'Column Break', 'Text Wrapping Break', 'Continuous Section', 'Even Page Section', 'Next Column Section', 'Next Page Section', 'Odd Page Section']
@@ -183,13 +183,12 @@ class MainWindow:
 		}
 		self.break_type = StringVar()
 		self.break_type.set(self.break_type_options[0])
-		'''
-		self.break_type_select = OptionMenu(base, self.break_type, *self.break_type_options)
-		self.break_type_select["menu"].config(relief=FLAT)
-		self.break_type_select["menu"].config(activeborderwidth=0)
-		self.break_type_select["menu"].config(bd=0)
-		self.break_type_select.grid(row=6,column=1, padx=5, pady=5)
-		'''
+		
+		#self.break_type_select = OptionMenu(base, self.break_type, *self.break_type_options)
+		#self.break_type_select["menu"].config(relief=FLAT)
+		#self.break_type_select["menu"].config(activeborderwidth=0)
+		#self.break_type_select["menu"].config(bd=0)
+		#self.break_type_select.grid(row=6,column=1, padx=5, pady=5)
 		
 		self.test_run = WindowsButton(base, darkmode=self.user_settings.dark_mode_enabled, text ='Test Run', state='disabled', command = self.run_limited_op)
 		self.test_run.grid(row=6,column=1, padx=5, pady=5)
@@ -329,13 +328,13 @@ class MainWindow:
 		with open(self.files.csv_file, encoding='utf8', newline='') as csv_file:
 			csv_list = csv.reader(csv_file)
 			headers = next(csv_list)
-			'''
-			data = next(csv_list) # new feature - show data preview
-			output = []
-			for i in range(len(headers)):
-				output.append(headers[i]+" "+data[i])
-			headers = sorted(output) # end new feature
-			'''
+			
+			#data = next(csv_list) # new feature - show data preview
+			#output = []
+			#for i in range(len(headers)):
+			#	output.append(headers[i]+" "+data[i])
+			#headers = sorted(output) # end new feature
+			
 			headers = sorted(headers)
 			self.headers_listbox.delete(0,END)
 			for header in headers:
@@ -349,13 +348,13 @@ class MainWindow:
 		with open(self.files.csv_file, encoding='utf8', newline='') as csv_file:
 			csv_list = csv.reader(csv_file)
 			headers = next(csv_list)
-			'''
-			data = next(csv_list) # new feature - show data preview
-			output = []
-			for i in range(len(headers)):
-				output.append(headers[i]+" "+data[i])
-			headers = sorted(output) # end new feature
-			'''
+			
+			#data = next(csv_list) # new feature - show data preview
+			#output = []
+			#for i in range(len(headers)):
+			#	output.append(headers[i]+" "+data[i])
+			#headers = sorted(output) # end new feature
+			
 			headers = sorted(headers)
 			self.headers_listbox.delete(0,END)
 			for header in headers:
@@ -479,11 +478,11 @@ class MainWindow:
 		self.run_op(4)
 
 	def run_op(self, limit=None):
-		map = self.map_fields()
+		mapped_fields = self.map_fields()
 		self.files.template = self.template_entry.get()
 		self.files.csv_file = self.csv_entry.get()
 		self.files.folder = self.folder_entry.get()
-		Convert(self.base, map, self.files, self.output_as_word.get(), self.output_as_word.get(), self.user_settings, limit)
+		Convert(self.base, mapped_fields, self.files, self.output_as_word.get(), self.output_as_word.get(), self.user_settings, limit)
 
 	def on_closing(self):
 		self.user_settings.save_to_disk()
