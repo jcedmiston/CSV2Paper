@@ -470,9 +470,9 @@ class MainWindow:
 	def map_fields(self):
 		headers = self.headers_listbox.get(0,END)
 		fields = self.merge_fields_listbox.get(0,END)
-		map = {}
-		for index in range(len(fields)):
-			map[fields[index]] = headers[index]
+		mapped_fields = {}
+		for i, field in enumerate(fields):
+			mappped_fields[fields[i]] = headers[i]
 		return map
 
 	def run_limited_op(self):
