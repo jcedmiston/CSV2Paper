@@ -38,9 +38,8 @@ def is_system_dark():
 
     def detect_dark_mode_mac():
         """Checks DARK/LIGHT mode of macos."""
-        cmd = 'defaults read -g AppleInterfaceStyle'
-        result = subprocess.run(cmd, shell=True, text=True,
-                           capture_output=True)
+        cmd = ['defaults', 'read', '-g', 'AppleInterfaceStyle']
+        result = subprocess.run(cmd, text=True, capture_output=True)
         return bool(result.stdout)
     
     _is_system_dark = False
