@@ -90,7 +90,6 @@ def convert(input_path, output_path=None, keep_active=False):
         return macos(paths, keep_active)
     elif sys.platform == "win32":
         return windows(paths, keep_active)
-    else:
-        raise NotImplementedError(
-            "docx2pdf is not implemented for linux as it requires Microsoft Word to be installed"
-        )
+    raise NotImplementedError(
+        "docx2pdf is not implemented for linux as it requires Microsoft Word to be installed"
+    )
