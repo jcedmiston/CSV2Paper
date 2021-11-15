@@ -94,4 +94,3 @@ def convert(input_path, output_path=None, keep_active=False):
         raise NotImplementedError(
             "docx2pdf requires Microsoft Word to be installed"
         )
-
