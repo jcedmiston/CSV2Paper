@@ -378,45 +378,38 @@ class MainWindow:
 
 	def on_select(self, sender):
 		listbox = sender.widget
-		try:
-			idxs = listbox.curselection()
-			if not idxs:
-				return
-			for pos in idxs:
+		idxs = listbox.curselection()
+		if not idxs:
+			return
+		for pos in idxs:
+			self.merge_fields_listbox.selection_clear(0,END)
+			self.merge_fields_listbox.selection_set(pos)
+			self.merge_fields_listbox.see(pos)
+			self.merge_fields_listbox.activate(pos)
+
+			self.headers_listbox.selection_clear(0,END)
+			self.headers_listbox.selection_set(pos)
+			self.headers_listbox.activate(pos)
+
+	def move_up(self):
+		idxs = self.headers_listbox.curselection()
+		if not idxs:
+			return
+		for pos in idxs:
+			if pos==0:
 				self.merge_fields_listbox.selection_clear(0,END)
 				self.merge_fields_listbox.selection_set(pos)
 				self.merge_fields_listbox.see(pos)
-				self.merge_fields_listbox.activate(pos)
-
-				self.headers_listbox.selection_clear(0,END)
-				self.headers_listbox.selection_set(pos)
-				self.headers_listbox.activate(pos)
-		except:
-			pass
-
-	def move_up(self):
-		try:
-			idxs = self.headers_listbox.curselection()
-			if not idxs:
-				return
-			for pos in idxs:
-				if pos==0:
-					self.merge_fields_listbox.selection_clear(0,END)
-					self.merge_fields_listbox.selection_set(pos)
-					self.merge_fields_listbox.see(pos)
-					continue
-				text=self.headers_listbox.get(pos)
-				self.headers_listbox.delete(pos)
-				self.headers_listbox.insert(pos-1, text)
-				self.headers_listbox.selection_set(pos-1)
-				self.headers_listbox.activate(pos-1)
-				self.merge_fields_listbox.selection_clear(0,END)
-				self.merge_fields_listbox.selection_set(pos-1)
-		except:
-			pass
+				continue
+			text=self.headers_listbox.get(pos)
+			self.headers_listbox.delete(pos)
+			self.headers_listbox.insert(pos-1, text)
+			self.headers_listbox.selection_set(pos-1)
+			self.headers_listbox.activate(pos-1)
+			self.merge_fields_listbox.selection_clear(0,END)
+			self.merge_fields_listbox.selection_set(pos-1)
 
 	def move_down(self):
-		#try:
 		idxs = self.headers_listbox.curselection()
 		if not idxs:
 			return
@@ -434,8 +427,6 @@ class MainWindow:
 			self.headers_listbox.activate(pos+1)
 			self.merge_fields_listbox.selection_clear(0,END)
 			self.merge_fields_listbox.selection_set(pos+1)
-		#except:
-		#	pass
 	
 	def check_runnable(self):
 		if not self.output_as_word.get() and not self.output_as_pdf.get():
