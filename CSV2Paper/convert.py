@@ -17,8 +17,8 @@ from files import __location__
 from mailmerge_tracking import MailMergeTracking
 
 class Convert:
-	def __init__(self, base, map, files, output_as_word, output_as_pdf, user_settings, limit=None):
-		self.map = map
+	def __init__(self, base, field_map, files, output_as_word, output_as_pdf, user_settings, limit=None):
+		self.field_map = field_map
 		self.files = files
 		self.output_as_word = output_as_word
 		self.output_as_pdf = output_as_pdf
@@ -125,7 +125,7 @@ class Convert:
 					if progress == limit:
 						break
 				if not stopped.is_set(): 
-					merge_data.append({field:row[self.map[field]] for field in document.get_merge_fields()})
+					merge_data.append({field:row[self.field_map[field]] for field in document.get_merge_fields()})
 					progress += 1
 					self.queue.put((progress, "Mapping data to fields...", "determinate"))
 				else: return
