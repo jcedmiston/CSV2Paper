@@ -13,7 +13,7 @@ from windows_style_button import WindowsButton
 from windows_title_bar_button import WindowsTitleBarButton
 
 class Updater:
-    def __init__(self, base: Tk, user_settings: UserSettings):
+    def __init__(self, base: Tk, user_settings: UserSettings, on_start=False):
         self.base = base
         self.user_settings = user_settings
         self.update_popup = Toplevel(base, takefocus=True)
@@ -40,22 +40,11 @@ class Updater:
         self.update_popup.wm_geometry(geom)
         self.update_popup.protocol("WM_DELETE_WINDOW", self.on_closing)
         self.update_popup.wm_title("CSV 2 Paper")
-
-        #self.update_popup.overrideredirect(True)
+        
         self.update_popup.resizable(False, False)
         self.update_popup.rowconfigure(0,weight=1)
         self.update_popup.columnconfigure(0,weight=1)
         self.update_popup.configure(bg=self.window_bg)
-
-        #self.title_bar = Frame(self.update_popup, bg="gray20")
-        #self.close_button = WindowsTitleBarButton(self.title_bar, width=45, height=28, command=self.on_closing)
-        #self.close_button.pack(side=RIGHT)
-        #self.win_title = Label(self.title_bar, bg='gray20', fg='white', padx=4, bd=0, text="CSV 2 Paper")
-        #self.win_title.pack(side=LEFT)
-        #self.title_bar.grid(row=0, column=0, columnspan=100, sticky='nsew')
-        
-        # bind title bar motion to the move window function
-        #self.title_bar.bind('<Button-1>', self.get_pos)
 
         s = ttk.Style()
         s.theme_use('alt')
@@ -77,10 +66,12 @@ class Updater:
         self.new_version_num_label = Label(self.update_popup, bg=self.window_bg, fg=self.fg, bd=0, textvariable=self.new_version_num, justify=CENTER)
 
         self.install_now = BooleanVar()
+        self.ok = BooleanVar()
         
         self.updates_checkbox = Checkbutton(self.update_popup, relief=FLAT, offrelief=FLAT, overrelief=FLAT, bg=self.window_bg, fg=self.fg, activebackground=self.window_bg, activeforeground=self.fg, selectcolor=self.select_bg, text='Check for updates on start', variable=self.user_settings.check_for_updates_on_start, onvalue=True, offvalue=False)
         self.install_now_button = WindowsButton(self.update_popup, darkmode=user_settings.dark_mode_enabled, highlight=True, text="Install Now", command=lambda: self.install_now.set(True))
         self.maybe_later_button = WindowsButton(self.update_popup, darkmode=user_settings.dark_mode_enabled, text="Maybe Later", command=lambda: self.install_now.set(False))
+        self.acknowledge_button = WindowsButton(self.update_popup, darkmode=user_settings.dark_mode_enabled, highlight=True, text="Ok", command=lambda: self.ok.set(True))
 
         self.update_available = False
         self.update_installer_url = None
@@ -127,6 +118,13 @@ class Updater:
             else:
                 self.on_closing()
         else:
+            if on_start:
+                self.on_closing()
+                return
+            self.status_label_text.set(value='This version is up to date.')
+            self.current_version_num_label.grid(row=2, column=0, padx=5, sticky='nswe')
+            self.acknowledge_button.grid(row=3, column=0, padx=5, pady=5, sticky='nswe')
+            self.update_popup.wait_variable(self.ok)
             self.on_closing()
 
     def check_for_updates(self):
@@ -146,7 +144,8 @@ class Updater:
         installer_download = requests.get(url, headers=self.headers)
         try:
             assert installer_download.status_code == 200
-        except AssertionError: return
+        except AssertionError: 
+            return
         if not stopped.is_set(): 
             installer = installer_download.content
         else: return

@@ -1,9 +1,9 @@
 import csv
 import json
 import sys
-from os.path import abspath, join
+from os.path import abspath, isfile, join, basename
 from tkinter import *
-from tkinter import filedialog
+from tkinter import filedialog, messagebox
 
 from convert import Convert
 from files import FilePaths, __location__
@@ -59,9 +59,9 @@ class MainWindow:
 		self.file_menu.add_command(label="Save Current Configuration", state="disabled", command=self.save_setup_template)
 
 		self.switch_theme = Menu(self.menu_bar, tearoff=0)
-		self.switch_theme.add_radiobutton(label="Use System Theme", value='system', variable=self.user_settings.default_theme, command=lambda:self.set_mode())
-		self.switch_theme.add_radiobutton(label="Dark", value="dark", variable=self.user_settings.default_theme, command=lambda:self.set_mode())
-		self.switch_theme.add_radiobutton(label="Light", value="light", variable=self.user_settings.default_theme, command=lambda:self.set_mode())
+		self.switch_theme.add_radiobutton(label="Use System Theme", value='system', variable=self.user_settings.default_theme, command=self.set_mode)
+		self.switch_theme.add_radiobutton(label="Dark", value="dark", variable=self.user_settings.default_theme, command=self.set_mode)
+		self.switch_theme.add_radiobutton(label="Light", value="light", variable=self.user_settings.default_theme, command=self.set_mode)
 		
 		self.options_menu = Menu(self.menu_bar, tearoff=0)
 		self.options_menu.add_checkbutton(label='Check for updates on start', variable=self.user_settings.check_for_updates_on_start, onvalue=True, offvalue=False)
@@ -78,24 +78,24 @@ class MainWindow:
 
 		self.template = StringVar(value="Word Template")
 		self.template_entry = Entry(textvariable=self.template, relief=FLAT)
-		self.template_entry.configure(validate="focusout", validatecommand = lambda:self.template_file_text())
-		self.template_file_selector = WindowsButton(base, darkmode=self.user_settings.dark_mode_enabled, image_filename=self.folder_icon_file, subx=6, suby=6, command = lambda:self.template_file_opener())
+		self.template_entry.configure(validate="focusout", validatecommand=self.template_file_text)
+		self.template_file_selector = WindowsButton(base, darkmode=self.user_settings.dark_mode_enabled, image_filename=self.folder_icon_file, subx=6, suby=6, command=self.template_file_opener)
 		self.template_entry.grid(row=1,column=1,columnspan=2,sticky='we',padx=(5, 30),pady=(0,0))
 		self.template_file_selector.grid(row=1,column=1,columnspan=2,sticky=E,padx=(0, 5),pady=5)
 
 
 		self.csv = StringVar(value="CSV")
 		self.csv_entry = Entry(state='disabled', textvariable=self.csv, relief=FLAT)
-		self.csv_entry.configure(validate="focusout", validatecommand = lambda:self.csv_file_text())
-		self.csv_file_selector = WindowsButton(base, darkmode=self.user_settings.dark_mode_enabled, image_filename=self.folder_icon_file, subx=6, suby=6, state='disabled', command = lambda:self.csv_file_opener())
+		self.csv_entry.configure(validate="focusout", validatecommand=self.csv_file_text)
+		self.csv_file_selector = WindowsButton(base, darkmode=self.user_settings.dark_mode_enabled, image_filename=self.folder_icon_file, subx=6, suby=6, state='disabled', command=self.csv_file_opener)
 		self.csv_entry.grid(row=2,column=1,columnspan=2,sticky='we',padx=(5, 30),pady=5)
 		self.csv_file_selector.grid(row=2,column=1,columnspan=2,sticky=E,padx=(0, 5),pady=5)
 
 
 		self.folder = StringVar(value="Output Folder")
 		self.folder_entry = Entry(state='disabled', textvariable=self.folder, relief=FLAT)
-		self.folder_entry.configure(validate="focusout", validatecommand = lambda:self.directory_selctor_text())
-		self.folder_selector = WindowsButton(base, darkmode=self.user_settings.dark_mode_enabled, image_filename=self.folder_icon_file, subx=6, suby=6, state='disabled', command = lambda:self.directory_selector())
+		self.folder_entry.configure(validate="focusout", validatecommand=self.directory_selctor_text)
+		self.folder_selector = WindowsButton(base, darkmode=self.user_settings.dark_mode_enabled, image_filename=self.folder_icon_file, subx=6, suby=6, state='disabled', command=self.directory_selector)
 		self.folder_entry.grid(row=3,column=1,columnspan=2,sticky='we',padx=(5, 30),pady=5)
 		self.folder_selector.grid(row=3,column=1,columnspan=2,sticky=E,padx=(0, 5),pady=5)
 
@@ -134,11 +134,7 @@ class MainWindow:
 		self.merge_fields_listbox.grid(row=1,column=0, sticky='nsew')
 
 		self.scroll_merge_fields_y.config(command = self.merge_fields_listbox.yview)
-		#self.scroll_merge_fields_y.grid(row=1,column=1, sticky='nsew')
-
 		self.scroll_merge_fields_x.config(command = self.merge_fields_listbox.xview)
-		#self.scroll_merge_fields_x.grid(row=2,column=0, sticky='nsew')
-
 
 		self.right_headers_group = Frame(base)
 		self.right_headers_group.grid(row=5,column=2, padx=5,pady=5, sticky='nsew')
@@ -156,18 +152,15 @@ class MainWindow:
 		self.headers_listbox.grid(row=1,column=0, sticky='nsew')
 
 		self.scroll_headers_y.config(command = self.headers_listbox.yview)
-		#self.scroll_headers_y.grid(row=1,column=1, sticky='nsew')
-
 		self.scroll_headers_x.config(command = self.headers_listbox.xview)
-		#self.scroll_headers_x.grid(row=2,column=0, sticky='nsew')
 
 		self.edit_header_buttons = Frame(self.right_headers_group)
 		self.edit_header_buttons.grid(row=1,column=2, rowspan=2, padx=5,pady=5, sticky='nsew')
 
-		self.move_header_up_button = WindowsButton(self.edit_header_buttons, darkmode=self.user_settings.dark_mode_enabled, image_filename=self.up_arrow_icon_file, subx=4, suby=4, command=lambda: self.move_up())
+		self.move_header_up_button = WindowsButton(self.edit_header_buttons, darkmode=self.user_settings.dark_mode_enabled, image_filename=self.up_arrow_icon_file, subx=4, suby=4, command=self.move_up)
 		self.move_header_up_button.grid(row=0,column=0, sticky='ew')
 
-		self.move_header_down_button = WindowsButton(self.edit_header_buttons, darkmode=self.user_settings.dark_mode_enabled, image_filename=self.down_arrow_icon_file, subx=4, suby=4, command=lambda: self.move_down())
+		self.move_header_down_button = WindowsButton(self.edit_header_buttons, darkmode=self.user_settings.dark_mode_enabled, image_filename=self.down_arrow_icon_file, subx=4, suby=4, command=self.move_down)
 		self.move_header_down_button.grid(row=1,column=0, sticky='ew')
 
 		self.break_type_options = ['Page Break', 'Column Break', 'Text Wrapping Break', 'Continuous Section', 'Even Page Section', 'Next Column Section', 'Next Page Section', 'Odd Page Section']
@@ -183,13 +176,12 @@ class MainWindow:
 		}
 		self.break_type = StringVar()
 		self.break_type.set(self.break_type_options[0])
-		'''
-		self.break_type_select = OptionMenu(base, self.break_type, *self.break_type_options)
-		self.break_type_select["menu"].config(relief=FLAT)
-		self.break_type_select["menu"].config(activeborderwidth=0)
-		self.break_type_select["menu"].config(bd=0)
-		self.break_type_select.grid(row=6,column=1, padx=5, pady=5)
-		'''
+		
+		#self.break_type_select = OptionMenu(base, self.break_type, *self.break_type_options)
+		#self.break_type_select["menu"].config(relief=FLAT)
+		#self.break_type_select["menu"].config(activeborderwidth=0)
+		#self.break_type_select["menu"].config(bd=0)
+		#self.break_type_select.grid(row=6,column=1, padx=5, pady=5)
 		
 		self.test_run = WindowsButton(base, darkmode=self.user_settings.dark_mode_enabled, text ='Test Run', state='disabled', command = self.run_limited_op)
 		self.test_run.grid(row=6,column=1, padx=5, pady=5)
@@ -199,7 +191,7 @@ class MainWindow:
 		
 		self.set_mode(first_run=True)
 		if self.user_settings.check_for_updates_on_start.get():
-			self.update()
+			self.update(True)
 		if len(sys.argv) > 1:
 			template_file = sys.argv[1]
 			self.open_setup_template(template_file)
@@ -221,14 +213,16 @@ class MainWindow:
 		self.docx_checkbox.configure(state='normal')
 		self.test_run.configure(state='normal')
 		self.run.configure(state='normal')
+		
+		if self.check_for_file(saved_setup_data["template_file"], self.template_file_opener) is not None:
+			self.files.template = saved_setup_data["template_file"]
+			self.template_entry.delete(0, END)
+			self.template_entry.insert(0, self.files.template)
 
-		self.files.template = saved_setup_data["template_file"]
-		self.template_entry.delete(0, END)
-		self.template_entry.insert(0, self.files.template)
-
-		self.files.csv_file = saved_setup_data["csv_file"]
-		self.csv_entry.delete(0, END)
-		self.csv_entry.insert(0, self.files.csv_file)
+		if self.check_for_file(saved_setup_data["csv_file"], self.csv_file_opener) is not None:
+			self.files.csv_file = saved_setup_data["csv_file"]
+			self.csv_entry.delete(0, END)
+			self.csv_entry.insert(0, self.files.csv_file)
 
 		self.files.folder = saved_setup_data["folder"]
 		self.folder_entry.delete(0, END)
@@ -256,7 +250,7 @@ class MainWindow:
 		if not fields == sorted(saved_setup_data["fields"]):
 			data_valid = False
 		saved_headers = sorted(list(saved_setup_data["matched_fields"].values()))
-		if not all(elem in headers  for elem in saved_headers):
+		if not all(elem in headers for elem in saved_headers):
 			data_valid = False
 	
 		if data_valid:
@@ -268,6 +262,14 @@ class MainWindow:
 					self.headers_listbox.insert(END, csv_value)
 			except IndexError:
 				pass
+		
+	
+	def check_for_file(self, file, callback):
+		if isfile(file):
+			return file
+		if messagebox.askyesno("CSV 2 Paper", 'The file "'+ basename(file) +'" no longer exists or has been moved. Would you like to relocate it?'):
+			callback()
+			return None
 
 	def save_setup_template(self):
 		save_data = {}
@@ -312,20 +314,20 @@ class MainWindow:
 				self.merge_fields_listbox.insert(END, field)
 
 	def csv_file_opener(self):
-		csv_file = filedialog.askopenfilename(filetypes=[("CSV", ".csv")])
+		csv_file = filedialog.askopenfilename(filetypes=[("Comma-Seperated Values (CSV)", ".csv")])
 		self.files.csv_file = csv_file
 		self.csv_entry.delete(0, END)
 		self.csv_entry.insert(0, csv_file)
 		with open(self.files.csv_file, encoding='utf8', newline='') as csv_file:
 			csv_list = csv.reader(csv_file)
 			headers = next(csv_list)
-			'''
-			data = next(csv_list) # new feature - show data preview
-			output = []
-			for i in range(len(headers)):
-				output.append(headers[i]+" "+data[i])
-			headers = sorted(output) # end new feature
-			'''
+			
+			#data = next(csv_list) # new feature - show data preview
+			#output = []
+			#for i in range(len(headers)):
+			#	output.append(headers[i]+" "+data[i])
+			#headers = sorted(output) # end new feature
+			
 			headers = sorted(headers)
 			self.headers_listbox.delete(0,END)
 			for header in headers:
@@ -339,13 +341,13 @@ class MainWindow:
 		with open(self.files.csv_file, encoding='utf8', newline='') as csv_file:
 			csv_list = csv.reader(csv_file)
 			headers = next(csv_list)
-			'''
-			data = next(csv_list) # new feature - show data preview
-			output = []
-			for i in range(len(headers)):
-				output.append(headers[i]+" "+data[i])
-			headers = sorted(output) # end new feature
-			'''
+			
+			#data = next(csv_list) # new feature - show data preview
+			#output = []
+			#for i in range(len(headers)):
+			#	output.append(headers[i]+" "+data[i])
+			#headers = sorted(output) # end new feature
+			
 			headers = sorted(headers)
 			self.headers_listbox.delete(0,END)
 			for header in headers:
@@ -369,64 +371,55 @@ class MainWindow:
 
 	def on_select(self, sender):
 		listbox = sender.widget
-		try:
-			idxs = listbox.curselection()
-			if not idxs:
-				return
-			for pos in idxs:
+		idxs = listbox.curselection()
+		if not idxs:
+			return
+		for pos in idxs:
+			self.merge_fields_listbox.selection_clear(0,END)
+			self.merge_fields_listbox.selection_set(pos)
+			self.merge_fields_listbox.see(pos)
+			self.merge_fields_listbox.activate(pos)
+
+			self.headers_listbox.selection_clear(0,END)
+			self.headers_listbox.selection_set(pos)
+			self.headers_listbox.activate(pos)
+
+	def move_up(self):
+		idxs = self.headers_listbox.curselection()
+		if not idxs:
+			return
+		for pos in idxs:
+			if pos==0:
 				self.merge_fields_listbox.selection_clear(0,END)
 				self.merge_fields_listbox.selection_set(pos)
 				self.merge_fields_listbox.see(pos)
-				self.merge_fields_listbox.activate(pos)
-
-				self.headers_listbox.selection_clear(0,END)
-				self.headers_listbox.selection_set(pos)
-				self.headers_listbox.activate(pos)
-		except:
-			pass
-
-	def move_up(self):
-		try:
-			idxs = self.headers_listbox.curselection()
-			if not idxs:
-				return
-			for pos in idxs:
-				if pos==0:
-					self.merge_fields_listbox.selection_clear(0,END)
-					self.merge_fields_listbox.selection_set(pos)
-					self.merge_fields_listbox.see(pos)
-					continue
-				text=self.headers_listbox.get(pos)
-				self.headers_listbox.delete(pos)
-				self.headers_listbox.insert(pos-1, text)
-				self.headers_listbox.selection_set(pos-1)
-				self.headers_listbox.activate(pos-1)
-				self.merge_fields_listbox.selection_clear(0,END)
-				self.merge_fields_listbox.selection_set(pos-1)
-		except:
-			pass
+				continue
+			text=self.headers_listbox.get(pos)
+			self.headers_listbox.delete(pos)
+			self.headers_listbox.insert(pos-1, text)
+			self.headers_listbox.selection_set(pos-1)
+			self.headers_listbox.activate(pos-1)
+			self.merge_fields_listbox.selection_clear(0,END)
+			self.merge_fields_listbox.selection_set(pos-1)
 
 	def move_down(self):
-		try:
-			idxs = self.headers_listbox.curselection()
-			if not idxs:
-				return
-			for pos in idxs:
-				# Are we at the bottom of the list?
-				if pos == self.headers_listbox.size()-1:
-					self.merge_fields_listbox.selection_clear(0,END)
-					self.merge_fields_listbox.selection_set(pos)
-					self.merge_fields_listbox.see(pos)
-					continue
-				text=self.headers_listbox.get(pos)
-				self.headers_listbox.delete(pos)
-				self.headers_listbox.insert(pos+1, text)
-				self.headers_listbox.selection_set(pos+1)
-				self.headers_listbox.activate(pos+1)
+		idxs = self.headers_listbox.curselection()
+		if not idxs:
+			return
+		for pos in idxs:
+			# Are we at the bottom of the list?
+			if pos == self.headers_listbox.size()-1:
 				self.merge_fields_listbox.selection_clear(0,END)
-				self.merge_fields_listbox.selection_set(pos+1)
-		except:
-			pass
+				self.merge_fields_listbox.selection_set(pos)
+				self.merge_fields_listbox.see(pos)
+				continue
+			text=self.headers_listbox.get(pos)
+			self.headers_listbox.delete(pos)
+			self.headers_listbox.insert(pos+1, text)
+			self.headers_listbox.selection_set(pos+1)
+			self.headers_listbox.activate(pos+1)
+			self.merge_fields_listbox.selection_clear(0,END)
+			self.merge_fields_listbox.selection_set(pos+1)
 	
 	def check_runnable(self):
 		if not self.output_as_word.get() and not self.output_as_pdf.get():
@@ -434,8 +427,8 @@ class MainWindow:
 		if self.output_as_word.get() or self.output_as_pdf.get():
 			self.run.configure(state='normal')
 
-	def update(self):
-		Updater(self.base, self.user_settings)
+	def update(self, on_start=False):
+		Updater(self.base, self.user_settings, on_start=on_start)
 
 	def about_popup(self):
 		about_win = Toplevel(takefocus=True)
@@ -460,20 +453,20 @@ class MainWindow:
 	def map_fields(self):
 		headers = self.headers_listbox.get(0,END)
 		fields = self.merge_fields_listbox.get(0,END)
-		map = {}
-		for index in range(len(fields)):
-			map[fields[index]] = headers[index]
-		return map
+		mapped_fields = {}
+		for i, field in enumerate(fields):
+			mapped_fields[fields[i]] = headers[i]
+		return mapped_fields
 
 	def run_limited_op(self):
 		self.run_op(4)
 
 	def run_op(self, limit=None):
-		map = self.map_fields()
+		mapped_fields = self.map_fields()
 		self.files.template = self.template_entry.get()
 		self.files.csv_file = self.csv_entry.get()
 		self.files.folder = self.folder_entry.get()
-		Convert(self.base, map, self.files, self.output_as_word.get(), self.output_as_word.get(), self.user_settings, limit)
+		Convert(self.base, mapped_fields, self.files, self.output_as_word.get(), self.output_as_word.get(), self.user_settings, limit)
 
 	def on_closing(self):
 		self.user_settings.save_to_disk()
