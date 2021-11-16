@@ -17,8 +17,8 @@ from files import __location__
 from mailmerge_tracking import MailMergeTracking
 
 class Convert:
-	def __init__(self, base, map, files, output_as_word, output_as_pdf, user_settings, limit=None):
-		self.map = map
+	def __init__(self, base, field_map, files, output_as_word, output_as_pdf, user_settings, limit=None):
+		self.field_map = field_map
 		self.files = files
 		self.output_as_word = output_as_word
 		self.output_as_pdf = output_as_pdf
@@ -114,6 +114,33 @@ class Convert:
 		self.run_popup.after(1, self.refresh_data)
 
 	def write_out(self, stopped, limit):
+		merge_data = self.prepair_data()
+		
+		if not stopped.is_set():
+			self.queue.put((self.num_records, "Mapping data to fields...", "determinate"))
+		else: return
+
+		self.queue.put((0, "Merging into template...", "determinate"))
+		document.merge_templates(merge_data, separator="page_break", queue=self.queue, stopped=stopped)
+		self.queue.put((self.num_records, "Merging into template...", "determinate"))
+
+
+		self.queue.put((None, "Saving...", "indeterminate"))
+		if not stopped.is_set():
+			docx_filepath, pdf_filepath = self.prepair_filenames()
+		else: return
+
+		if not stopped.is_set():
+			self.write_to_files(docx_filepath, pdf_filepath)
+		else: return
+		
+		self.queue.put((None, "Opening...", "holding"))
+		if not stopped.is_set():
+			self.open_on_finish(docx_filepath, pdf_filepath)
+		else: return
+		self.queue.put((None, "Opening...", "finished"))
+	
+	def prepair_data(self):
 		with open(self.files.csv_file, encoding='utf8', newline='') as csv_file:
 			csv_dict = csv.DictReader(csv_file)
 				
@@ -125,72 +152,60 @@ class Convert:
 					if progress == limit:
 						break
 				if not stopped.is_set(): 
-					merge_data.append({field:row[self.map[field]] for field in document.get_merge_fields()})
+					merge_data.append({field:row[self.field_map[field]] for field in document.get_merge_fields()})
 					progress += 1
 					self.queue.put((progress, "Mapping data to fields...", "determinate"))
 				else: return
-
-		if not stopped.is_set():
-			self.queue.put((self.num_records, "Mapping data to fields...", "determinate"))
-		else: return
-
-		self.queue.put((0, "Merging into template...", "determinate"))
-		document.merge_templates(merge_data, separator="page_break", queue=self.queue, stopped=stopped)
-		self.queue.put((self.num_records, "Merging into template...", "determinate"))
-
+			return merge_data
+	
+	def prepair_filenames(self):
 		docx_filename = str(self.files.filename)+".docx"
 		pdf_filename = str(self.files.filename)+".pdf"
-
-		if not stopped.is_set():
-			self.queue.put((None, "Saving...", "indeterminate"))
-			if not isdir(self.files.folder):
-				mkdir(self.files.folder)
-		else: return
-
+		
+		if not isdir(self.files.folder):
+			mkdir(self.files.folder)
+		
 		docx_filepath = normpath(abspath(join(self.files.folder, docx_filename)))
 		pdf_filepath = normpath(abspath(join(self.files.folder, pdf_filename)))
-
-		if not stopped.is_set():
-			if not self.output_as_word:
-				temp_docx = NamedTemporaryFile(delete=False, suffix=".docx")
-				temp_docx.close()
-				document.write(temp_docx.name)
-				document.close()
-				try:
-					convert(temp_docx.name, pdf_filepath)
-				except NotImplementedError:
-					pass
-				unlink(temp_docx.name)
-			if not self.output_as_pdf:
-				document.write(docx_filepath)
-				document.close()
-			if self.output_as_word and self.output_as_pdf:
-				document.write(docx_filepath)
-				document.close()
-				try:
-					convert(docx_filepath, pdf_filepath) 
-				except NotImplementedError:
-					pass
-		else: return
 		
-		if not stopped.is_set():
-			self.queue.put((None, "Opening...", "holding"))
-			if platform.system() == 'Darwin':       # macOS
-				if self.output_as_word:
-					subprocess.call(('open', docx_filepath))
-				if self.output_as_pdf:
-					subprocess.call(('open', pdf_filepath))
-			elif platform.system() == 'Windows':    # Windows
-				if self.output_as_word:
-					os.startfile(docx_filepath)
-				if self.output_as_pdf:
-					os.startfile(pdf_filepath)
-			else:                                   # linux variants
-				if self.output_as_word:
-					subprocess.call(('xdg-open', docx_filepath))
+		return (docx_filepath, pdf_filepath)
+	
+	def write_to_files(self, docx_filepath, pdf_filepath):
+		if not self.output_as_word:
+			temp_docx = NamedTemporaryFile(delete=False, suffix=".docx")
+			temp_docx.close()
+			document.write(temp_docx.name)
+			document.close()
+			try:
+				convert(temp_docx.name, pdf_filepath)
+			except NotImplementedError:
+				pass
+			unlink(temp_docx.name)
+		if not self.output_as_pdf:
+			document.write(docx_filepath)
+			document.close()
+		if self.output_as_word and self.output_as_pdf:
+			document.write(docx_filepath)
+			document.close()
+			try:
+				convert(docx_filepath, pdf_filepath) 
+			except NotImplementedError:
+				pass
 			
-			self.queue.put((None, "Opening...", "finished"))
-		else: return
+	def open_on_finish(self, docx_filepath, pdf_filepath):
+		if platform.system() == 'Darwin':       # macOS
+			if self.output_as_word:
+				subprocess.call(('open', docx_filepath))
+			if self.output_as_pdf:
+				subprocess.call(('open', pdf_filepath))
+		elif platform.system() == 'Windows':    # Windows
+			if self.output_as_word:
+				os.startfile(docx_filepath)
+			if self.output_as_pdf:
+				os.startfile(pdf_filepath)
+		else:                                   # linux variants
+			if self.output_as_word:
+				subprocess.call(('xdg-open', docx_filepath))
 	
 	def on_closing(self):
 		if messagebox.askyesno("CSV 2 Paper", "Are you sure you want to cancel?"):

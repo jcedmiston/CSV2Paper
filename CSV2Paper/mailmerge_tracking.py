@@ -27,7 +27,7 @@ class MailMergeTracking(MailMerge):
         valid_separators = {'page_break', 'column_break', 'textWrapping_break', 'continuous_section', 'evenPage_section', 'nextColumn_section', 'nextPage_section', 'oddPage_section'}
         if not separator in valid_separators:
             raise ValueError("Invalid separator argument")
-        type, sepClass = separator.split("_")
+        sepType, sepClass = separator.split("_")
   
 
         #GET ROOT - WORK WITH DOCUMENT
@@ -52,7 +52,7 @@ class MailMergeTracking(MailMerge):
                         nextPageSec.remove(child)
                 #Create new type (def parameter)
                 newType = etree.SubElement(nextPageSec, '{%(w)s}type'  % NAMESPACES)
-                newType.set('{%(w)s}val'  % NAMESPACES, type)
+                newType.set('{%(w)s}val'  % NAMESPACES, sepType)
 
                 #REPLACING FIRST SECTION
                 secRoot = firstSection.getparent()
@@ -101,7 +101,7 @@ class MailMergeTracking(MailMerge):
                                         pb   = etree.SubElement(child, '{%(w)s}p'  % NAMESPACES)
                                         r = etree.SubElement(pb, '{%(w)s}r'  % NAMESPACES)
                                         nbreak = Element('{%(w)s}br' % NAMESPACES)
-                                        nbreak.attrib['{%(w)s}type' % NAMESPACES] = type
+                                        nbreak.attrib['{%(w)s}type' % NAMESPACES] = sepType
                                         r.append(nbreak)
 
                     self.merge(parts, **repl)

@@ -92,5 +92,5 @@ def convert(input_path, output_path=None, keep_active=False):
         return windows(paths, keep_active)
     else:
         raise NotImplementedError(
-            "docx2pdf is not implemented for linux as it requires Microsoft Word to be installed"
+            "docx2pdf requires Microsoft Word to be installed"
         )
