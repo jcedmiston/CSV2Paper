@@ -114,12 +114,13 @@ class Convert:
 		self.run_popup.after(1, self.refresh_data)
 
 	def write_out(self, stopped, limit):
-		merge_data = self.prepair_data()
+		document = MailMergeTracking(self.files.template)
+		merge_data = self.prepair_data(document, stopped, limit)
 		
 		if not stopped.is_set():
 			self.queue.put((self.num_records, "Mapping data to fields...", "determinate"))
 		else: return
-
+		
 		self.queue.put((0, "Merging into template...", "determinate"))
 		document.merge_templates(merge_data, separator="page_break", queue=self.queue, stopped=stopped)
 		self.queue.put((self.num_records, "Merging into template...", "determinate"))
@@ -140,11 +141,9 @@ class Convert:
 		else: return
 		self.queue.put((None, "Opening...", "finished"))
 	
-	def prepair_data(self):
+	def prepair_data(self, document, stopped, limit):
 		with open(self.files.csv_file, encoding='utf8', newline='') as csv_file:
 			csv_dict = csv.DictReader(csv_file)
-				
-			document = MailMergeTracking(self.files.template)
 			merge_data = []
 			progress = 0
 			for row in csv_dict:
