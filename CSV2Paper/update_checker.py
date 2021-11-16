@@ -40,22 +40,11 @@ class Updater:
         self.update_popup.wm_geometry(geom)
         self.update_popup.protocol("WM_DELETE_WINDOW", self.on_closing)
         self.update_popup.wm_title("CSV 2 Paper")
-
-        #self.update_popup.overrideredirect(True)
+        
         self.update_popup.resizable(False, False)
         self.update_popup.rowconfigure(0,weight=1)
         self.update_popup.columnconfigure(0,weight=1)
         self.update_popup.configure(bg=self.window_bg)
-
-        #self.title_bar = Frame(self.update_popup, bg="gray20")
-        #self.close_button = WindowsTitleBarButton(self.title_bar, width=45, height=28, command=self.on_closing)
-        #self.close_button.pack(side=RIGHT)
-        #self.win_title = Label(self.title_bar, bg='gray20', fg='white', padx=4, bd=0, text="CSV 2 Paper")
-        #self.win_title.pack(side=LEFT)
-        #self.title_bar.grid(row=0, column=0, columnspan=100, sticky='nsew')
-        
-        # bind title bar motion to the move window function
-        #self.title_bar.bind('<Button-1>', self.get_pos)
 
         s = ttk.Style()
         s.theme_use('alt')

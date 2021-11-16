@@ -134,11 +134,7 @@ class MainWindow:
 		self.merge_fields_listbox.grid(row=1,column=0, sticky='nsew')
 
 		self.scroll_merge_fields_y.config(command = self.merge_fields_listbox.yview)
-		#self.scroll_merge_fields_y.grid(row=1,column=1, sticky='nsew')
-
 		self.scroll_merge_fields_x.config(command = self.merge_fields_listbox.xview)
-		#self.scroll_merge_fields_x.grid(row=2,column=0, sticky='nsew')
-
 
 		self.right_headers_group = Frame(base)
 		self.right_headers_group.grid(row=5,column=2, padx=5,pady=5, sticky='nsew')
@@ -156,10 +152,7 @@ class MainWindow:
 		self.headers_listbox.grid(row=1,column=0, sticky='nsew')
 
 		self.scroll_headers_y.config(command = self.headers_listbox.yview)
-		#self.scroll_headers_y.grid(row=1,column=1, sticky='nsew')
-
 		self.scroll_headers_x.config(command = self.headers_listbox.xview)
-		#self.scroll_headers_x.grid(row=2,column=0, sticky='nsew')
 
 		self.edit_header_buttons = Frame(self.right_headers_group)
 		self.edit_header_buttons.grid(row=1,column=2, rowspan=2, padx=5,pady=5, sticky='nsew')
