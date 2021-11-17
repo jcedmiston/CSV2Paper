@@ -9,6 +9,7 @@ from os.path import abspath, isdir, join, normpath
 from tempfile import NamedTemporaryFile
 from tkinter import *
 from tkinter import messagebox, ttk
+from base_window import BaseWindow
 
 from docx2pdf import convert
 from drag_drop_listbox import DragDropListbox
@@ -16,24 +17,15 @@ from drag_drop_listbox import DragDropListbox
 from files import __location__
 from mailmerge_tracking import MailMergeTracking
 
-class Convert:
+class Convert(BaseWindow):
 	def __init__(self, base, field_map, files, output_as_word, output_as_pdf, user_settings, limit=None):
+		super().__init__(user_settings = user_settings)
+
 		self.field_map = field_map
 		self.files = files
 		self.output_as_word = output_as_word
 		self.output_as_pdf = output_as_pdf
 		self.user_settings = user_settings
-
-		self.window_bg = None
-		self.widget_bg = None
-		self.fg = None
-		self.insert_bg = None
-		self.disabled_bg = 'gray80'
-		self.select_bg = None
-		self.folder_icon_file = None
-		self.up_arrow_icon_file = None
-		self.down_arrow_icon_file = None
-		self.set_colors()
 
 		self.run_popup = Toplevel(takefocus=True)
 		self.run_popup.focus_force()
@@ -132,7 +124,7 @@ class Convert:
 		else: return
 
 		if not stopped.is_set():
-			self.write_to_files(docx_filepath, pdf_filepath)
+			self.write_to_files(document, docx_filepath, pdf_filepath)
 		else: return
 		
 		self.queue.put((None, "Opening...", "holding"))
@@ -169,7 +161,7 @@ class Convert:
 		
 		return (docx_filepath, pdf_filepath)
 	
-	def write_to_files(self, docx_filepath, pdf_filepath):
+	def write_to_files(self, document, docx_filepath, pdf_filepath):
 		if not self.output_as_word:
 			temp_docx = NamedTemporaryFile(delete=False, suffix=".docx")
 			temp_docx.close()
@@ -212,25 +204,3 @@ class Convert:
 			if self.thread.is_alive():
 				self.thread.join()
 			self.run_popup.destroy()
-
-	def set_colors(self):
-		if self.user_settings.dark_mode_enabled:
-			self.window_bg = 'gray15'
-			self.widget_bg = 'gray35'
-			self.fg = 'white'
-			self.insert_bg = 'white'
-			self.disabled_bg = 'gray20'
-			self.select_bg = 'gray30'
-			self.folder_icon_file = join(__location__, 'resources', 'folder_open', '2x', 'sharp_folder_open_white_48dp.png')
-			self.up_arrow_icon_file = join(__location__, 'resources', 'cheveron_up', '2x', 'sharp_chevron_up_white_48dp.png')
-			self.down_arrow_icon_file = join(__location__, 'resources', 'cheveron_down', '2x', 'sharp_chevron_down_white_48dp.png')
-		else:
-			self.window_bg = 'SystemButtonFace'
-			self.widget_bg = 'SystemWindow'
-			self.fg = 'SystemWindowText'
-			self.insert_bg = 'SystemWindowText'
-			self.disabled_bg = 'gray80'
-			self.select_bg = 'SystemWindow'
-			self.folder_icon_file = join(__location__, 'resources', 'folder_open', '2x', 'sharp_folder_open_black_48dp.png')
-			self.up_arrow_icon_file = join(__location__, 'resources', 'cheveron_up', '2x', 'sharp_chevron_up_black_48dp.png')
-			self.down_arrow_icon_file = join(__location__, 'resources', 'cheveron_down', '2x', 'sharp_chevron_down_black_48dp.png')
