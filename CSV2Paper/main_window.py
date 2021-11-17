@@ -15,8 +15,8 @@ from windows_style_button import WindowsButton
 class MainWindow(BaseWindow):
 	def __init__(self, base: Tk, user_settings: UserSettings):
 		super().__init__(user_settings = user_settings)
-		self.files = FilePaths()
 
+		self.files = FilePaths()
 		self.folder_icon_file_dark = join(__location__, 'resources', 'folder_open', '2x', 'sharp_folder_open_black_48dp.png')
 		self.up_arrow_icon_file_dark = join(__location__, 'resources', 'cheveron_up', '2x', 'sharp_chevron_up_black_48dp.png')
 		self.down_arrow_icon_file_dark = join(__location__, 'resources', 'cheveron_down', '2x', 'sharp_chevron_down_black_48dp.png')
