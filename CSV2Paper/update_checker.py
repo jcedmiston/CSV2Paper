@@ -1,16 +1,18 @@
 import json
 import subprocess
 import threading
-import requests
 from os import path
 from tempfile import gettempdir
 from tkinter import *
 from tkinter import ttk
+
+import requests
+
 from base_window import BaseWindow
 from files import __location__
 from user_settings import UserSettings
 from windows_style_button import WindowsButton
-from windows_title_bar_button import WindowsTitleBarButton
+
 
 class Updater(BaseWindow):
     def __init__(self, base: Tk, user_settings: UserSettings, on_start=False):

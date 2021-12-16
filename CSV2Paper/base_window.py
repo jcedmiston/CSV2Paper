@@ -1,6 +1,8 @@
 from os.path import join
+
 from files import __location__
 from user_settings import UserSettings
+
 
 class BaseWindow:
 	def __init__(self, user_settings: UserSettings):

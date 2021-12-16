@@ -9,13 +9,12 @@ from os.path import abspath, isdir, join, normpath
 from tempfile import NamedTemporaryFile
 from tkinter import *
 from tkinter import messagebox, ttk
+
 from base_window import BaseWindow
-
 from docx2pdf import convert
-from drag_drop_listbox import DragDropListbox
-
 from files import __location__
 from mailmerge_tracking import MailMergeTracking
+
 
 class Convert(BaseWindow):
 	def __init__(self, base, field_map, files, output_as_word, output_as_pdf, user_settings, limit=None):
