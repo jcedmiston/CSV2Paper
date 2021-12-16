@@ -1,16 +1,18 @@
 import csv
 import json
 import sys
-from os.path import abspath, isfile, join, basename
+from os.path import abspath, basename, isfile, join
 from tkinter import *
 from tkinter import filedialog, messagebox
+
 from base_window import BaseWindow
-from user_settings import UserSettings
 from convert import Convert
 from files import FilePaths, __location__
 from mailmerge_tracking import MailMergeTracking
 from update_checker import Updater
+from user_settings import UserSettings
 from windows_style_button import WindowsButton
+
 
 class MainWindow(BaseWindow):
 	def __init__(self, base: Tk, user_settings: UserSettings):
