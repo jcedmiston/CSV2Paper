@@ -28,7 +28,7 @@ class MainWindow:
 		self.folder_icon_file = None
 		self.up_arrow_icon_file = None
 		self.down_arrow_icon_file = None
-		self.set_colors()
+		#self.set_colors()
 
 		self.folder_icon_file_dark = join(__location__, 'resources', 'folder_open', '2x', 'sharp_folder_open_black_48dp.png')
 		self.up_arrow_icon_file_dark = join(__location__, 'resources', 'cheveron_up', '2x', 'sharp_chevron_up_black_48dp.png')
@@ -45,7 +45,7 @@ class MainWindow:
 		if self.user_settings.check_for_updates_on_start.get():
 			self.base.withdraw()
 		self.base.title("CSV 2 Paper")
-		self.base.iconbitmap(default=join(__location__, 'resources', 'icons', '32x32.ico'))
+		#self.base.iconbitmap(default=join(__location__, 'resources', 'icons', '32x32.ico'))
 		self.base.columnconfigure(1,weight=1)    #confiugures to stretch with a scaler of 1.
 		self.base.rowconfigure(5,weight=1)
 		self.base.columnconfigure(2,weight=1)
@@ -79,7 +79,7 @@ class MainWindow:
 		self.template = StringVar(value="Word Template")
 		self.template_entry = Entry(textvariable=self.template, relief=FLAT)
 		self.template_entry.configure(validate="focusout", validatecommand = lambda:self.template_file_text())
-		self.template_file_selector = WindowsButton(base, darkmode=self.user_settings.dark_mode_enabled, image_filename=self.folder_icon_file, subx=6, suby=6, command = lambda:self.template_file_opener())
+		self.template_file_selector = Button(base, command = lambda:self.template_file_opener())
 		self.template_entry.grid(row=1,column=1,columnspan=2,sticky='we',padx=(5, 30),pady=(0,0))
 		self.template_file_selector.grid(row=1,column=1,columnspan=2,sticky=E,padx=(0, 5),pady=5)
 
@@ -87,7 +87,7 @@ class MainWindow:
 		self.csv = StringVar(value="CSV")
 		self.csv_entry = Entry(state='disabled', textvariable=self.csv, relief=FLAT)
 		self.csv_entry.configure(validate="focusout", validatecommand = lambda:self.csv_file_text())
-		self.csv_file_selector = WindowsButton(base, darkmode=self.user_settings.dark_mode_enabled, image_filename=self.folder_icon_file, subx=6, suby=6, state='disabled', command = lambda:self.csv_file_opener())
+		self.csv_file_selector = Button(base, state='disabled', command = lambda:self.csv_file_opener())
 		self.csv_entry.grid(row=2,column=1,columnspan=2,sticky='we',padx=(5, 30),pady=5)
 		self.csv_file_selector.grid(row=2,column=1,columnspan=2,sticky=E,padx=(0, 5),pady=5)
 
@@ -95,7 +95,7 @@ class MainWindow:
 		self.folder = StringVar(value="Output Folder")
 		self.folder_entry = Entry(state='disabled', textvariable=self.folder, relief=FLAT)
 		self.folder_entry.configure(validate="focusout", validatecommand = lambda:self.directory_selctor_text())
-		self.folder_selector = WindowsButton(base, darkmode=self.user_settings.dark_mode_enabled, image_filename=self.folder_icon_file, subx=6, suby=6, state='disabled', command = lambda:self.directory_selector())
+		self.folder_selector = Button(base, state='disabled', command = lambda:self.directory_selector())
 		self.folder_entry.grid(row=3,column=1,columnspan=2,sticky='we',padx=(5, 30),pady=5)
 		self.folder_selector.grid(row=3,column=1,columnspan=2,sticky=E,padx=(0, 5),pady=5)
 
@@ -164,10 +164,10 @@ class MainWindow:
 		self.edit_header_buttons = Frame(self.right_headers_group)
 		self.edit_header_buttons.grid(row=1,column=2, rowspan=2, padx=5,pady=5, sticky='nsew')
 
-		self.move_header_up_button = WindowsButton(self.edit_header_buttons, darkmode=self.user_settings.dark_mode_enabled, image_filename=self.up_arrow_icon_file, subx=4, suby=4, command=lambda: self.move_up())
+		self.move_header_up_button = Button(self.edit_header_buttons, command=lambda: self.move_up())
 		self.move_header_up_button.grid(row=0,column=0, sticky='ew')
 
-		self.move_header_down_button = WindowsButton(self.edit_header_buttons, darkmode=self.user_settings.dark_mode_enabled, image_filename=self.down_arrow_icon_file, subx=4, suby=4, command=lambda: self.move_down())
+		self.move_header_down_button = Button(self.edit_header_buttons, command=lambda: self.move_down())
 		self.move_header_down_button.grid(row=1,column=0, sticky='ew')
 
 		self.break_type_options = ['Page Break', 'Column Break', 'Text Wrapping Break', 'Continuous Section', 'Even Page Section', 'Next Column Section', 'Next Page Section', 'Odd Page Section']
@@ -191,10 +191,10 @@ class MainWindow:
 		self.break_type_select.grid(row=6,column=1, padx=5, pady=5)
 		'''
 		
-		self.test_run = WindowsButton(base, darkmode=self.user_settings.dark_mode_enabled, text ='Test Run', state='disabled', command = self.run_limited_op)
+		self.test_run = Button(base, text ='Test Run', state='disabled', command = self.run_limited_op)
 		self.test_run.grid(row=6,column=1, padx=5, pady=5)
 
-		self.run = WindowsButton(base, darkmode=self.user_settings.dark_mode_enabled, text ='Run', state='disabled', command = self.run_op)
+		self.run = Button(base, text ='Run', state='disabled', command = self.run_op)
 		self.run.grid(row=6,column=2, padx=5, pady=5)
 		
 		self.set_mode(first_run=True)
@@ -486,7 +486,7 @@ class MainWindow:
 			return
 		def update_elements(base):
 			for child in base.winfo_children():
-				if isinstance(child, WindowsButton) and not first_run:
+				if isinstance(child, Button) and not first_run:
 					if child.image_filename:
 						child.change_mode(self.matching_icon_filenames[child.image_filename])
 					else:
@@ -504,7 +504,7 @@ class MainWindow:
 									selectcolor=self.select_bg)
 				elif isinstance(child, Listbox):
 					child.configure(bg=self.widget_bg, fg=self.fg)
-		self.set_colors()
+		#self.set_colors()
 		self.base.configure(bg=self.window_bg)
 		update_elements(self.base)
 		self.base.update()

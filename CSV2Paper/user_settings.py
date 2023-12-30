@@ -6,7 +6,9 @@ from detect_dark_mode import is_system_dark
 from os.path import isdir, join, expanduser
 
 
-app_data_path = join(expanduser("~"), "AppData", "Local", "CSV 2 Paper")
+#app_data_path = join(expanduser("~"), "AppData", "Local", "CSV 2 Paper")
+app_data_path = join(expanduser("~"), "Developer", "CSV2PAPER", "CSV2Paper", "Settings")
+#/Users/Joseph/Developer/CSV2PAPER/CSV2Paper/settings
 if not isdir(app_data_path):
     mkdir(app_data_path)
 
